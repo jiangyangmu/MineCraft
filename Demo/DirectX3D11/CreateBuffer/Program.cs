@@ -16,52 +16,108 @@ namespace CreateBuffer
 {
     static class Program
     {
-        /// <summary>
-        /// The main entry point for the application.
-        /// </summary>
-        [STAThread]
+        
         static void Main()
         {
-            InitializeDirectX(
-                out Form mainWnd,
-                out D3DDevice device,
-                out SwapChain swapChain);
-
-            // Create vertex buffer
-
-            // Vertex Elements: Position, Color, Normal
-            var vertexData = new[]
+            string info = "";
+            try
             {
-                // Vertex = (Position, Color)
-                new Vector4(-1.0f,  0.0f, 0.0f, 1.0f), new Vector4(1.0f, 0.0f, 0.0f, 1.0f),
-                new Vector4( 0.0f,  1.732f, 0.0f, 1.0f), new Vector4(0.0f, 1.0f, 0.0f, 1.0f),
-                new Vector4( 1.0f,  0.0f, 0.0f, 1.0f), new Vector4(0.0f, 0.0f, 1.0f, 1.0f),
-            };
-            var vertexDataSize = vertexData.Length * Utilities.SizeOf<Vector4>();
+                InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain);
+
+                // Possible combination
+                // Create
+                //  {Immutable, Default, Dynamic, Staging} x {none, read, write, read_write}
+                // CPU side operations
+                //  {read, write, read_write, write_discard, write_no_override}
+                Tuple<string, ResourceUsage>[] usageList =
+                {
+                    new Tuple<string, ResourceUsage>("Default", ResourceUsage.Default),
+                    new Tuple<string, ResourceUsage>("Dynamic", ResourceUsage.Dynamic),
+                    new Tuple<string, ResourceUsage>("Immutable", ResourceUsage.Immutable),
+                    new Tuple<string, ResourceUsage>("Staging", ResourceUsage.Staging),
+                };
+                Tuple<string, CpuAccessFlags>[] cpuFlagList =
+                {
+                    new Tuple<string, CpuAccessFlags>("None", CpuAccessFlags.None),
+                    new Tuple<string, CpuAccessFlags>("Read", CpuAccessFlags.Read),
+                    new Tuple<string, CpuAccessFlags>("Write", CpuAccessFlags.Write),
+                    new Tuple<string, CpuAccessFlags>("RW", CpuAccessFlags.Read | CpuAccessFlags.Write),
+                };
+
+                // Correct combination
+                // Create
+                //  1. Default + none
+                //  2. Dynamic + write
+                //  3. Immutable + none
+                // CPU side operations
+                //  2. write_discard
+                foreach (var usage in usageList)
+                {
+                    foreach (var cpuFlag in cpuFlagList)
+                    {
+                        info += "----------- " + usage.Item1 + " + " + cpuFlag.Item1 + " -----------\r\n";
+                        try
+                        {
+                            var vertexData = new[] { new Vector4(1, 2, 3, 4) };
+                            var vertexData2 = new[] { new Vector4(11, 22, 33, 44) };
+                            info += "Create:\r\n";
+                            var vertexBuffer = CreateVertexBuffer(ref device, vertexData, usage.Item2, cpuFlag.Item2);
+                            info += "  Success.\r\n";
+                            var context = device.ImmediateContext;
+                            info += ProfileBuffer(ref context, ref vertexBuffer, vertexData2);
+                            vertexBuffer.Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            info += e.Message;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                info += "----------- Global Exception -----------\r\n";
+                info += e.ToString();
+            }
+            finally
+            {
+                var mb = new ScrollableMessageBox();
+                mb.showText.Text = info;
+                mb.Show();
+                Application.Run(mb);
+            }
+        }
+
+        static D3DBuffer CreateVertexBuffer<T>(ref D3DDevice device, T[] vertexData, ResourceUsage resourceUsage, CpuAccessFlags cpuAccessFlags) where T : struct
+        {
+            var vertexDataSize = vertexData.Length * Utilities.SizeOf<T>();
+            if (vertexDataSize % 16 != 0)
+            {
+                throw new ArgumentException("vertex data size is not multiply of 16.");
+            }
 
             var vertexBufferDesc = new BufferDescription()
             {
-                /* Usage */ Usage = ResourceUsage.Default,
-                /* ByteWidth */ SizeInBytes = vertexDataSize,
-                /* BindFlags */ BindFlags = BindFlags.VertexBuffer,
-                /* CPUAccessFlags */ CpuAccessFlags = CpuAccessFlags.None,
-                /* MiscFlags */ OptionFlags = ResourceOptionFlags.None,
-                /* StructureByteStride */ StructureByteStride = 0,
+                /* Usage */
+                Usage = resourceUsage,
+                /* ByteWidth */
+                SizeInBytes = vertexDataSize,
+                /* BindFlags */
+                BindFlags = BindFlags.VertexBuffer,
+                /* CPUAccessFlags */
+                CpuAccessFlags = cpuAccessFlags,
+                /* MiscFlags */
+                OptionFlags = ResourceOptionFlags.None,
+                /* StructureByteStride */
+                StructureByteStride = 0,
             };
 
             var vertexBuffer = D3DBuffer.Create(device, vertexData, vertexBufferDesc);
-
-            // TODO: Create index buffer
-
-            // Create constant buffer
-
-            // Example: Transformation Matrix
-            var constantData = new[]
-            {
-                // WorldViewProjectMatrix
-                Matrix.Identity
-            };
-            var constantDataSize = constantData.Length * Utilities.SizeOf<Matrix>();
+            return vertexBuffer;
+        }
+        static D3DBuffer CreateConstantBuffer<T>(ref D3DDevice device, T[] constantData) where T : struct
+        {
+            var constantDataSize = constantData.Length * Utilities.SizeOf<T>();
 
             var constantBufferDesc = new BufferDescription()
             {
@@ -80,13 +136,144 @@ namespace CreateBuffer
             };
 
             var constantBuffer = D3DBuffer.Create(device, constantData, constantBufferDesc);
+            return constantBuffer;
+        }
+        static string ProfileBuffer<T>(ref DeviceContext context, ref D3DBuffer buffer, T[] writeData) where T : struct
+        {
+            string info = "";
 
-            RunDirectX(
-                    mainWnd,
-                    ref device,
-                    swapChain,
-                    ref vertexBuffer,
-                    constantBuffer);
+            Tuple<string, MapMode> modeList;
+            
+            info += "Map-Read Test:\r\n";
+            try
+            {
+                context.MapSubresource(buffer, MapMode.Read, /* wait if busy */0, out DataStream readStream);
+                info += "  length: " + readStream.Length + "\r\n";
+                info += "  read: " + readStream.CanRead + "\r\n";
+                info += "  write: " + readStream.CanWrite + "\r\n";
+                info += "  seek: " + readStream.CanSeek + "\r\n";
+                if (readStream.CanRead)
+                {
+                    info += "  Content:\r\n";
+                    while (readStream.RemainingLength > 0)
+                        info += "  " + (readStream.Length - readStream.RemainingLength) + ":" + readStream.Read<T>().ToString() + "\r\n";
+                }
+                context.UnmapSubresource(buffer, 0);
+                readStream.Dispose();
+            }
+            catch (Exception e)
+            {
+                info += "  exception: " + e.Message + "\r\n";
+            }
+            
+            info += "Map-Write Test:\r\n";
+            try
+            {
+                bool readBack = false;
+                context.MapSubresource(buffer, MapMode.Write, /* wait if busy */0, out DataStream writeStream);
+                info += "  length: " + writeStream.Length + "\r\n";
+                info += "  read: " + writeStream.CanRead + "\r\n";
+                info += "  write: " + writeStream.CanWrite + "\r\n";
+                info += "  seek: " + writeStream.CanSeek + "\r\n";
+                if (writeStream.CanWrite)
+                {
+                    writeStream.WriteRange<T>(writeData);
+                    readBack = true;
+                }
+                context.UnmapSubresource(buffer, 0);
+                writeStream.Dispose();
+                if (readBack)
+                {
+                    context.MapSubresource(buffer, MapMode.Read, 0, out DataStream readStream);
+                    if (readStream.CanRead)
+                    {
+                        info += "  Content After Write:\r\n";
+                        while (readStream.RemainingLength > 0)
+                            info += "  " + (readStream.Length - readStream.RemainingLength) + ":" + readStream.Read<T>().ToString() + "\r\n";
+                    }
+                    context.UnmapSubresource(buffer, 0);
+                    readStream.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                info += "  exception: " + e.Message + "\r\n";
+            }
+
+            info += "Map-RW Test:\r\n";
+            try
+            {
+                bool readBack = false;
+                context.MapSubresource(buffer, MapMode.ReadWrite, /* wait if busy */0, out DataStream writeStream);
+                info += "  length: " + writeStream.Length + "\r\n";
+                info += "  read: " + writeStream.CanRead + "\r\n";
+                info += "  write: " + writeStream.CanWrite + "\r\n";
+                info += "  seek: " + writeStream.CanSeek + "\r\n";
+                if (writeStream.CanRead)
+                {
+                    info += "  Read Content:\r\n";
+                    while (writeStream.RemainingLength > 0)
+                        info += "  " + (writeStream.Length - writeStream.RemainingLength) + ":" + writeStream.Read<T>().ToString() + "\r\n";
+                }
+                if (writeStream.CanWrite)
+                {
+                    writeStream.WriteRange<T>(writeData);
+                    readBack = true;
+                }
+                context.UnmapSubresource(buffer, 0);
+                writeStream.Dispose();
+                if (readBack)
+                {
+                    context.MapSubresource(buffer, MapMode.Read, 0, out DataStream readStream);
+                    if (readStream.CanRead)
+                    {
+                        info += "  Content After Write:\r\n";
+                        while (readStream.RemainingLength > 0)
+                            info += "  " + (readStream.Length - readStream.RemainingLength) + ":" + readStream.Read<T>().ToString() + "\r\n";
+                    }
+                    context.UnmapSubresource(buffer, 0);
+                    readStream.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                info += "  exception: " + e.Message + "\r\n";
+            }
+
+            info += "Map-Write-Discard Test:\r\n";
+            try
+            {
+                bool readBack = false;
+                context.MapSubresource(buffer, MapMode.WriteDiscard, /* wait if busy */0, out DataStream writeStream);
+                info += "  length: " + writeStream.Length + "\r\n";
+                info += "  read: " + writeStream.CanRead + "\r\n";
+                info += "  write: " + writeStream.CanWrite + "\r\n";
+                info += "  seek: " + writeStream.CanSeek + "\r\n";
+                if (writeStream.CanWrite)
+                {
+                    writeStream.WriteRange<T>(writeData);
+                    readBack = true;
+                }
+                context.UnmapSubresource(buffer, 0);
+                writeStream.Dispose();
+                if (readBack)
+                {
+                    context.MapSubresource(buffer, MapMode.Read, 0, out DataStream readStream);
+                    if (readStream.CanRead)
+                    {
+                        info += "  Content After Write:\r\n";
+                        while (readStream.RemainingLength > 0)
+                            info += "  " + (readStream.Length - readStream.RemainingLength) + ":" + readStream.Read<T>().ToString() + "\r\n";
+                    }
+                    context.UnmapSubresource(buffer, 0);
+                    readStream.Dispose();
+                }
+            }
+            catch (Exception e)
+            {
+                info += "  exception: " + e.Message + "\r\n";
+            }
+            return info;
         }
 
         static void InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain)
@@ -121,103 +308,19 @@ namespace CreateBuffer
                 IsWindowed = true,
                 SwapEffect = swapEffect,
             };
-            D3DDevice.CreateWithSwapChain(
-                DriverType.Hardware,
-                DeviceCreationFlags.None,
-                swapChainDesc,
-                out device,
-                out swapChain);
-        }
-        static void RunDirectX(Form mainWnd, ref D3DDevice device, SwapChain swapChain, ref D3DBuffer vertexBuffer, D3DBuffer constantBuffer)
-        {
-            // Setup graphics pipeline
 
-            var context = device.ImmediateContext;
-
-            // 1. IA, VS, PS stage: Prepare shaders, bind buffers
-
-            var vertexSize = Utilities.SizeOf<Vector4>() * 2;
-            var vertexBuffers = new[] { vertexBuffer };
-            var vertexBufferStrides = new[] { vertexSize };
-            var vertexBufferOffsets = new[] { 0 };
-
-            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", "VS", "vs_4_0");
-            var vertexShader = new VertexShader(device, vertexShaderByteCode);
-            var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", "PS", "ps_4_0");
-            var pixelShader = new PixelShader(device, pixelShaderByteCode);
-            var signature = ShaderSignature.GetInputSignature(vertexShaderByteCode);
-            var inputLayout = new InputLayout(device, signature, new[]
-            {
-                new InputElement("POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
-                new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0)
-            });
-
-            context.InputAssembler.InputLayout = inputLayout;
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
-            context.InputAssembler.SetVertexBuffers(0, vertexBuffers, vertexBufferStrides, vertexBufferOffsets);
-            context.VertexShader.SetConstantBuffer(0, constantBuffer);
-            context.VertexShader.Set(vertexShader);
-            context.PixelShader.Set(pixelShader);
-
-            // 2. Rasterizer, OM stage: viewport, render targets & depth-stencil test.
-
-            var viewport = new Viewport(0, 0, mainWnd.ClientSize.Width, mainWnd.ClientSize.Height, 0.0f, 1.0f);
-
-            var backBuffer = Texture2D.FromSwapChain<Texture2D>(swapChain, 0);
-            var depthBuffer = new Texture2D(device, new Texture2DDescription()
-            {
-                Format = Format.D32_Float_S8X24_UInt,
-                ArraySize = 1,
-                MipLevels = 1,
-                Width = mainWnd.ClientSize.Width,
-                Height = mainWnd.ClientSize.Height,
-                SampleDescription = new SampleDescription(1, 0),
-                Usage = ResourceUsage.Default,
-                BindFlags = BindFlags.DepthStencil,
-                CpuAccessFlags = CpuAccessFlags.None,
-                OptionFlags = ResourceOptionFlags.None
-            });
-            var renderView = new RenderTargetView(device, backBuffer);
-            var depthView = new DepthStencilView(device, depthBuffer);
-
-            context.Rasterizer.SetViewport(viewport);
-            context.OutputMerger.SetTargets(depthView, renderView);
-
-            // Setup transformations.
-
-            var view = Matrix.LookAtLH(new Vector3(0, 0, -5), new Vector3(0, 0, 0), Vector3.UnitY);
-            var proj = Matrix.PerspectiveFovLH((float)Math.PI / 4.0f, mainWnd.ClientSize.Width / (float)mainWnd.ClientSize.Height, 0.1f, 100.0f);
-            var world = Matrix.Identity;
-
-            // Render.
-
-            mainWnd.KeyUp += (sender, args) =>
-            {
-                if (args.KeyCode == Keys.Escape)
-                    mainWnd.Close();
-            };
-            var clock = new Stopwatch();
-            clock.Start();
-            var vertexCount = vertexBuffer.Description.SizeInBytes / vertexSize;
-            RenderLoop.Run(mainWnd, () => {
-                // Clear views.
-                context.ClearDepthStencilView(depthView, DepthStencilClearFlags.Depth, 1.0f, 0);
-                context.ClearRenderTargetView(renderView, Color.Black);
-
-                // Update world data.
-                var time = clock.ElapsedMilliseconds / 1000.0f;
-                world = Matrix.Translation(new Vector3(0, -1.732f / 2.0f, 0)) * Matrix.RotationZ(time);
-
-                var matrix = world * view * proj;
-                matrix.Transpose();
-
-                context.UpdateSubresource(ref matrix, constantBuffer);
-
-                // Draw.
-                context.Draw(vertexCount, 0);
-
-                swapChain.Present(0, PresentFlags.None);
-            });
+            var factory = new Factory1();
+            // 0: Intel 1: Nvidia 2: CPU
+            var adapter = factory.Adapters1[1];
+            device = new D3DDevice(adapter);
+            swapChain = new SwapChain(factory, device, swapChainDesc);
+            MessageBox.Show(adapter.Description.Description);
+            //D3DDevice.CreateWithSwapChain(
+            //    DriverType.Hardware,
+            //    DeviceCreationFlags.None,
+            //    swapChainDesc,
+            //    out device,
+            //    out swapChain);
         }
     }
 }
