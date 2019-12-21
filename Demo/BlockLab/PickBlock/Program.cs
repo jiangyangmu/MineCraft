@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Threading;
 
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -18,13 +19,17 @@ namespace PickBlock
     {
         class GameState
         {
-            public float FPS { get => (totalFrame * 1000.0f / totalTimeMS); }
-            public Vector3 POS { get => new Vector3(movePos.X, movePos.Y, altitude); }
+            public int FPS { get => (int)(totalFrame * 1000.0f / totalTimeMS); }
 
             public void OnMouseMove(int x, int y, int screenWidth, int screenHeight)
             {
-                mousePosX = (float)x / screenWidth;
-                mousePosY = (float)y / screenHeight;
+                mousePos.X = (float)x / screenWidth;
+                mousePos.Y = (float)y / screenHeight;
+            }
+            public void OnMouseDown(MouseButtons button)
+            {
+                if (button == MouseButtons.Left)
+                    command["mine!"] = true;
             }
             public void OnKeyDown(Keys keyCode)
             {
@@ -36,7 +41,7 @@ namespace PickBlock
                     case Keys.D: keyMap['d'] = true; break;
                     case Keys.Q: keyMap['q'] = true; break;
                     case Keys.E: keyMap['e'] = true; break;
-                    case Keys.R: removeOneBlock = true; break;
+                    case Keys.R: command["shoot!"] = true; break;
                     case Keys.Space: upVelocity = 8.0f; break;
                     default: break;
                 }
@@ -57,50 +62,55 @@ namespace PickBlock
 
             public void UpdateFPS(float elapsedTimeMS)
             {
-                if (totalTimeMS > 1000.0f)
+                if (totalTimeMS > 3000.0f)
                 {
-                    totalFrame = 0;
-                    totalTimeMS = 0.0f;
+                    totalFrame /= 2;
+                    totalTimeMS *= 0.5f;
                 }
                 ++totalFrame;
                 totalTimeMS += elapsedTimeMS;
             }
-            public void UpdatePosition(float elapsedTimeMS, Vector3 forward, Vector3 right)
+            public void UpdatePosition(float elapsedTimeMS, Camera camera)
             {
                 float moveFactor = (elapsedTimeMS / 1000.0f) * 10.0f;
                 float jumpFactor = (elapsedTimeMS / 1000.0f) * 4.0f;
 
                 // horizontal
-                if (keyMap['w']) movePos += forward * moveFactor;
-                if (keyMap['s']) movePos -= forward * moveFactor;
-                if (keyMap['a']) movePos -= right * moveFactor;
-                if (keyMap['d']) movePos += right * moveFactor;
+                if (keyMap['w']) camera.MoveForward(moveFactor);
+                if (keyMap['s']) camera.MoveBackward(moveFactor);
+                if (keyMap['a']) camera.MoveLeft(moveFactor);
+                if (keyMap['d']) camera.MoveRight(moveFactor);
 
                 // vertical
+                // var ground = world.Has
                 if (altitude > 0.0f || (altitude == 0.0f && upVelocity != 0.0f))
                 {
+                    camera.MoveUp(upVelocity * jumpFactor);
                     altitude += upVelocity * jumpFactor;
                     upVelocity += -9.8f * jumpFactor;
                 }
                 else
                 {
+                    camera.MoveUp(-altitude);
                     altitude = upVelocity = 0.0f;
                 }
             }
             public void UpdateEye(World world, ref Camera camera)
             {
                 // update WVP matrix
+                // var proj = Matrix.OrthoLH(camera.AspectRatio * 10, 10, 0.1f, 10.0f);
                 var proj = Matrix.PerspectiveFovLH((float)Math.PI / 4.0f, camera.AspectRatio, 0.1f, 100.0f);
                 var view = camera.ViewMatrix;
-                var worldMat = Matrix.Translation(world.UpF * -altitude) * Matrix.Translation(movePos);
+
+                var worldMat = Matrix.Identity;// Matrix.Translation(world.UpF * -altitude);
                 worldViewProj = worldMat * view * proj;
                 worldViewProj.Transpose();
 
                 // update camera
-                camera.HorizontalAngle = (mousePosX - 0.5f) * 360.0f;
-                camera.VerticalAngle = (0.5f - mousePosY) * 180.0f;
+                camera.HorizontalAngle = (mousePos.X) * 360.0f * 2.0f;
+                camera.VerticalAngle = (0.5f - mousePos.Y) * 180.0f;
             }
-
+            
             public Matrix worldViewProj = Matrix.Identity;
             public Dictionary<char, bool> keyMap = new Dictionary<char, bool>()
             {
@@ -111,26 +121,33 @@ namespace PickBlock
                 { 'q' , false },
                 { 'e' , false },
             };
-            public Vector3 movePos = new Vector3(0, 0, 0);
-            public bool removeOneBlock = false;
-            public float mousePosX = 0.0f;
-            public float mousePosY = 0.0f;
+            public Dictionary<string, bool> command = new Dictionary<string, bool>()
+            {
+                { "shoot!", false },
+                { "mine!", false },
+            };
+            public Vector2 mousePos = Vector2.Zero;
             public float altitude = 0.0f;
             public float upVelocity = 0.0f;
+
             public float totalFrame = 0;
             public float totalTimeMS = 0.0f;
         }
+
         static void Main()
         {
             var world = new World();
+            world.AddBlockPlane(world.Origin + world.Up * 2, Block.Type.GRASS, 6, 6, 6, 6);
+            world.AddBlockPlane(world.Origin + world.Up, Block.Type.GRASS, 8, 8, 8, 8);
             world.AddBlockPlane(world.Origin, Block.Type.GRASS, 10, 10, 10, 10);
+            world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
+            world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
+            world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
 
-            var camera = new Camera();
-            camera.Eye = world.OriginF + 5.0f * world.UpF;
-            camera.Up = world.UpF;
-            camera.Forward = new Vector3(0.0f, 1.0f, 0.0f);
-            camera.HorizontalAngle = 0.0f;
-            camera.VerticalAngle = 0.0f;
+            var camera = new Camera(
+                pos: world.OriginF + 5.0f * world.UpF,
+                up: world.UpF
+                );
 
             var gameState = new GameState();
             var game = new Game();
@@ -141,6 +158,10 @@ namespace PickBlock
             game.Start(
                 ControlLogic: (Control mainWnd) =>
                 {
+                    mainWnd.MouseDown += (sender, e) =>
+                    {
+                        gameState.OnMouseDown(e.Button);
+                    };
                     mainWnd.MouseMove += (sender, e) =>
                     {
                         gameState.OnMouseMove(e.X, e.Y, mainWnd.ClientSize.Width, mainWnd.ClientSize.Height);
@@ -156,30 +177,39 @@ namespace PickBlock
                 },
                 GameLogic: (float elapsedTimeMS) =>
                 {
+                    int ms = (int)(1000.0f * 1.7 / 120.0f - elapsedTimeMS);
+                    Thread.Sleep(ms > 0 ? ms : 0);
+
                     gameState.UpdateFPS(elapsedTimeMS);
-                    gameState.UpdatePosition(elapsedTimeMS, camera.Orientation, camera.OrientationRight);
+                    gameState.UpdatePosition(elapsedTimeMS, camera);
                     gameState.UpdateEye(world, ref camera);
                 },
                 RenderLogic: (out string debugText) =>
                 {
                     debugText =
                     "FPS: " + gameState.FPS + "\r\n" +
-                    "Pos: " + gameState.POS + "\r\n" +
-                    "Ori: " + camera.Orientation.ToString() + "\r\n";
+                    "Mouse: " + gameState.mousePos + "\r\n" + 
+                    camera.DebugString +
+                    "Dirty frame: " + world.NumDirtyFrame + "\r\n" +
+                    "Block: " + world.NumBlock + "\r\n" +
+                    "Ray: " + world.NumRay + "\r\n";
 
                     game.Context.UpdateSubresource(ref gameState.worldViewProj, game.BufferManager.GetCB(DXBufferType.CONSTANT).Buffer);
 
-                    if (gameState.removeOneBlock)
+                    if (gameState.command["shoot!"])
                     {
-                        gameState.removeOneBlock = false;
-                        if (world.RemoveRandomBlock())
-                        {
-                            game.BufferManager.GetVB(DXBufferType.TRIANGLES).Update(world.GetVertices());
-                        }
+                        gameState.command["shoot!"] = false;
+                        world.AddRay(camera.Pos, camera.Orientation, Vector3.One);
                     }
-                    var vertexCount = world.BlockCount * Block.VERTEX_COUNT;
+                    else if (gameState.command["mine!"])
+                    {
+                        gameState.command["mine!"] = false;
+                        world.RemovePickedBlock();
+                    }
+                    world.PickTest(new Ray(camera.Pos, camera.Orientation));
 
-                    game.Context.Draw(vertexCount, 0);
+                    world.UpdateVertexBuffer(game.BufferManager.GetVB(DXBufferType.TRIANGLES));
+                    world.CallDraws(game.Context);
                 }
                 );
         }

@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 
 using SharpDX;
+using SharpDX.Direct3D;
+using SharpDX.Direct3D11;
 using SharpDX.Mathematics;
 
 namespace PickBlock
 {
-    public class Block
+    class Block
     {
         public enum Type
         {
@@ -20,17 +22,24 @@ namespace PickBlock
         {
             this.type = type;
             this.pos = pos;
-            alive = true;
         }
 
-        public bool Alive { get => alive; set => alive = value; }
+        public Int3 Pos { get => pos; }
+        public BoundingBox Box
+        {
+            get => new BoundingBox(
+                new Vector3(pos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE),
+                new Vector3(pos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE));
+        }
 
         // For DirectX
-        public void FillVertice(ref Vector4[] v, ref int offset)
+        public void FillVertice(ref Vector4[] v, ref int offset, Vector3 overrideColor)
         {
             // Position, Color
             var fpos = new Vector3(pos.X, pos.Y, pos.Z);
-            var fcolor = (pos.X + pos.Y + pos.Z) % 2 == 0 ? new Vector3(0.3f, 0.3f, 0.3f) : new Vector3(1.0f, 1.0f, 1.0f);
+            var fcolor = !overrideColor.IsZero
+                ? overrideColor
+                : ((pos.X + pos.Y + pos.Z) % 2 == 0 ? new Vector3(0.3f, 0.3f, 0.3f) : new Vector3(1.0f, 1.0f, 1.0f));
 
             v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Front
             v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
@@ -77,9 +86,8 @@ namespace PickBlock
 
         private Type type;
         private Int3 pos;
-        private bool alive;
     }
-    public class World
+    class World
     {
         // Left-handed, X => Right, Y => Forward, -Z => Up
         public Int3 Right { get; }
@@ -92,20 +100,26 @@ namespace PickBlock
         public Vector3 ForwardF { get; }
         public Vector3 OriginF { get; }
 
+        public int NumDirtyFrame { get => dirtyFrame; set => dirtyFrame = value; }
+        public int NumBlock { get => blockMap.Count; }
+        public int NumRay { get => rayCollection.Count; }
+
         public World()
         {
             Right = new Int3(1, 0, 0);
             Forward = new Int3(0, 1, 0);
-            Up = new Int3(0, 0, -1);
+            Up = new Int3(0, 0, 1);
             Origin = new Int3(0, 0, 0);
 
             RightF = new Vector3(1, 0, 0);
             ForwardF = new Vector3(0, 1, 0);
-            UpF = new Vector3(0, 0, -1);
+            UpF = new Vector3(0, 0, 1);
             OriginF = new Vector3(0, 0, 0);
 
             blockMap = new Dictionary<string, Block>();
-            blockCount = 0;
+            rayCollection = new List<Tuple<Ray, Vector3>>();
+
+            pickedBlock = Int3.Zero;
         }
         public World(Int3 right, Int3 forward, Int3 up)
         {
@@ -120,7 +134,9 @@ namespace PickBlock
             OriginF = new Vector3(Origin.X, Origin.Y,Origin.Z);
 
             blockMap = new Dictionary<string, Block>();
-            blockCount = 0;
+            rayCollection = new List<Tuple<Ray, Vector3>>();
+
+            pickedBlock = Int3.Zero;
         }
 
         public bool AddBlock(Int3 pos, Block.Type type)
@@ -131,15 +147,7 @@ namespace PickBlock
             if (!blockMap.TryGetValue(key, out oldBlock))
             {
                 blockMap.Add(key, new Block(type, pos));
-                ++blockCount;
-                IsDirty = true;
-                return true;
-            }
-            else if (!oldBlock.Alive)
-            {
-                blockMap[key] = new Block(type, pos);
-                ++blockCount;
-                IsDirty = true;
+                isDirty = true;
                 return true;
             }
             else
@@ -165,9 +173,7 @@ namespace PickBlock
             if (blockMap.ContainsKey(key))
             {
                 blockMap.Remove(key);
-                // blockMap[key].Alive = false;
-                --blockCount;
-                IsDirty = true;
+                isDirty = true;
                 return true;
             }
             else
@@ -187,9 +193,7 @@ namespace PickBlock
             if (blockMap.ContainsKey(key))
             {
                 blockMap.Remove(key);
-                // blockMap[key].Alive = false;
-                --blockCount;
-                IsDirty = true;
+                isDirty = true;
                 return true;
             }
             else
@@ -197,34 +201,99 @@ namespace PickBlock
                 return false;
             }
         }
-        
-        // For DirectX
-        public bool IsDirty { get; set; }
-        public int BlockCount { get => blockCount; }
-        public void FillVertice(ref Vector4[] v, ref int offset)
+        // block picking
+        public void PickBlock(Int3 pos)
         {
-            foreach (Block block in blockMap.Values)
+            if (pickedBlock != pos)
             {
-                if (block.Alive)
-                    block.FillVertice(ref v, ref offset);
+                pickedBlock = pos;
+                isDirty = true;
             }
         }
-        public Vector4[] GetVertices()
+        public void RemovePickedBlock()
         {
-            var vertices = new Vector4[blockCount * Block.VERTEX_COUNT];
-            int offset = 0;
+            RemoveBlock(pickedBlock);
+        }
+        public void PickTest(Ray ray)
+        {
             foreach (Block block in blockMap.Values)
             {
-                if (block.Alive)
-                    block.FillVertice(ref vertices, ref offset);
+                if (ray.Intersects(block.Box))
+                {
+                    PickBlock(block.Pos);
+                    return;
+                }
             }
+        }
+        public void AddRay(Vector3 pos, Vector3 ori, Vector3 color)
+        {
+            rayCollection.Add(new Tuple<Ray, Vector3>(new Ray(pos, ori), color));
+            isDirty = true;
+        }
+        // collision
+        public bool HasBlock(Int3 pos)
+        {
+            return blockMap.ContainsKey(pos.ToString());
+        }
+
+        // For DirectX
+        public void UpdateVertexBuffer(DXDynamicVertexBuffer vertexBuffer)
+        {
+            if (isDirty)
+            {
+                isDirty = false;
+                ++NumDirtyFrame;
+                vertexBuffer.Reset(GetVertices());
+                
+            }
+        }
+        public void CallDraws(DeviceContext context)
+        {
+            int offset = 0;
+
+            int rayRegion = rayCollection.Count * 4 / 2;
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
+            context.Draw(rayRegion, offset);
+            offset += rayRegion;
+
+            int blockRegion = blockMap.Count * Block.VERTEX_COUNT / 2;
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.Draw(blockRegion, offset);
+            offset += blockRegion;
+        }
+
+        private Vector4[] GetVertices()
+        {
+            var vertices = new Vector4[
+                blockMap.Count * Block.VERTEX_COUNT + // block
+                rayCollection.Count * 4 // ray
+                ];
+
+            int offset = 0;
+            foreach (Tuple<Ray, Vector3> entry in rayCollection)
+            {
+                var ray = entry.Item1;
+                var color = entry.Item2;
+                vertices[offset++] = new Vector4(ray.Position, 1.0f);
+                vertices[offset++] = new Vector4(color, 1.0f);
+                vertices[offset++] = new Vector4(ray.Position + ray.Direction * 100.0f, 1.0f);
+                vertices[offset++] = new Vector4(color, 1.0f);
+            }
+            foreach (Block block in blockMap.Values)
+            {
+                block.FillVertice(ref vertices, ref offset, pickedBlock == block.Pos ? Vector3.UnitX : Vector3.Zero);
+            }
+
+            vertexCount = vertices.Length;
+
             return vertices;
         }
 
+        private bool isDirty = false;
+        private int dirtyFrame = 0;
         private Dictionary<string, Block> blockMap;
-        private int blockCount;
-        
-        // Representation
-        // Block as Tri Vertex
+        private Int3 pickedBlock;
+        private List<Tuple<Ray, Vector3>> rayCollection;
+        private int vertexCount;
     }
 }

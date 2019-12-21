@@ -30,34 +30,36 @@ namespace PickBlock
 
         public D3DBuffer Buffer { get => buffer; }
 
-        public void Create<T>(T[] bufferData) where T : struct
+        public void Reset<T>(T[] bufferData) where T : struct
         {
-            if (buffer != null)
-            {
-                throw new InvalidOperationException("Can't create twice.");
-            }
-            bufferSizeInBytes = bufferData.Length * Utilities.SizeOf<T>();
-            buffer = CreateDynamicVertexBuffer(device, bufferData, bufferSizeInBytes);
-        }
-        public void Update<T>(T[] bufferData) where T : struct
-        {
-            if (buffer == null)
-            {
-                throw new InvalidOperationException("Call Create() first.");
-            }
             if (bufferSizeInBytes < (bufferData.Length * Utilities.SizeOf<T>()))
             {
-                throw new InvalidOperationException("Data size mismatch.");
-            }
+                if (buffer != null)
+                {
+                    buffer.Dispose();
+                }
+                bufferSizeInBytes = bufferData.Length * Utilities.SizeOf<T>();
+                buffer = CreateDynamicVertexBuffer(device, bufferData, bufferSizeInBytes);
 
-            context.MapSubresource(buffer, 0, MapMode.WriteDiscard, 0, out DataStream stream);
-            stream.WriteRange(bufferData);
-            stream.Dispose();
-            context.UnmapSubresource(buffer, 0);
+                context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
+                    buffer,
+                    Utilities.SizeOf<Vector4>() * 2, // vertex size
+                    0));
+            }
+            else
+            {
+                context.MapSubresource(buffer, 0, MapMode.WriteDiscard, 0, out DataStream stream);
+                stream.WriteRange(bufferData);
+                stream.Dispose();
+                context.UnmapSubresource(buffer, 0);
+            }
         }
         public void Dispose()
         {
-            buffer.Dispose();
+            if (buffer != null)
+            {
+                buffer.Dispose();
+            }
         }
 
         private D3DDevice device;
@@ -111,31 +113,28 @@ namespace PickBlock
 
         public D3DBuffer Buffer { get => buffer; }
 
-        public void Create<T>(T[] bufferData) where T : struct
+        public void Reset<T>(T[] bufferData) where T : struct
         {
-            if (buffer != null)
+            if (bufferSizeInBytes < (bufferData.Length * Utilities.SizeOf<T>()))
             {
-                throw new InvalidOperationException("Can't create twice.");
+                if (buffer != null)
+                {
+                    buffer.Dispose();
+                }
+                bufferSizeInBytes = bufferData.Length * Utilities.SizeOf<T>();
+                buffer = CreateConstantBuffer(device, bufferData, bufferSizeInBytes);
             }
-            bufferSizeInBytes = bufferData.Length * Utilities.SizeOf<T>();
-            buffer = CreateConstantBuffer(device, bufferData, bufferSizeInBytes);
-        }
-        public void Update<T>(T[] bufferData) where T : struct
-        {
-            if (buffer == null)
+            else
             {
-                throw new InvalidOperationException("Call Create() first.");
+                context.UpdateSubresource(bufferData, buffer);
             }
-            if (bufferSizeInBytes != (bufferData.Length * Utilities.SizeOf<T>()))
-            {
-                throw new InvalidOperationException("Data size mismatch.");
-            }
-
-            context.UpdateSubresource(bufferData, buffer);
         }
         public void Dispose()
         {
-            buffer.Dispose();
+            if (buffer != null)
+            {
+                buffer.Dispose();
+            }
         }
 
         private D3DDevice device;

@@ -150,8 +150,8 @@ namespace PickBlock
 
             // 0. Prepare buffers
 
-            bufferManager.GetVB(DXBufferType.TRIANGLES).Create(world.GetVertices());
-            bufferManager.GetCB(DXBufferType.CONSTANT).Create(new[] { Matrix.Identity });
+            world.UpdateVertexBuffer(bufferManager.GetVB(DXBufferType.TRIANGLES));
+            bufferManager.GetCB(DXBufferType.CONSTANT).Reset(new[] { Matrix.Identity });
 
             var vertexBuffer = bufferManager.GetVB(DXBufferType.TRIANGLES).Buffer;
             var constantBuffer = bufferManager.GetCB(DXBufferType.CONSTANT).Buffer;
@@ -159,7 +159,7 @@ namespace PickBlock
             // 1. IA, VS, PS stage: Prepare shaders, bind buffers
 
             context.InputAssembler.InputLayout = inputLayout;
-            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
+            context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 vertexBuffer,
                 Utilities.SizeOf<Vector4>() * 2, // vertex size
