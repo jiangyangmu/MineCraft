@@ -3,9 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28307.902
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ManyBlocks", "ManyBlocks\ManyBlocks.csproj", "{45058368-FCBF-44E3-8450-F832AA77865B}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "0_ManyBlocks", "ManyBlocks\0_ManyBlocks.csproj", "{45058368-FCBF-44E3-8450-F832AA77865B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PickBlock", "PickBlock\PickBlock.csproj", "{A2BFC92E-0258-49EB-9CEB-3918B9C57FC8}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "1_PickBlock", "PickBlock\1_PickBlock.csproj", "{A2BFC92E-0258-49EB-9CEB-3918B9C57FC8}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "2_MineBlock", "MineBlock\2_MineBlock.csproj", "{88CA177F-CD65-4ED5-A16F-446069C71811}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{A2BFC92E-0258-49EB-9CEB-3918B9C57FC8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A2BFC92E-0258-49EB-9CEB-3918B9C57FC8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A2BFC92E-0258-49EB-9CEB-3918B9C57FC8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{88CA177F-CD65-4ED5-A16F-446069C71811}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{88CA177F-CD65-4ED5-A16F-446069C71811}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{88CA177F-CD65-4ED5-A16F-446069C71811}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{88CA177F-CD65-4ED5-A16F-446069C71811}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
