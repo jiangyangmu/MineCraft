@@ -39,7 +39,7 @@ namespace MineBlock
             var fpos = new Vector3(pos.X, pos.Y, pos.Z);
             var fcolor = !overrideColor.IsZero
                 ? overrideColor
-                : ((pos.X + pos.Y + pos.Z) % 2 == 0 ? new Vector3(0.3f, 0.3f, 0.3f) : new Vector3(1.0f, 1.0f, 1.0f));
+                : new Vector3(0.3f, 0.3f, 0.3f);
 
             // Down
             v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
