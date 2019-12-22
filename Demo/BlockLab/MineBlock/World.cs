@@ -16,7 +16,7 @@ namespace MineBlock
         };
         public static readonly float SIZE = 1.0f;
         public static readonly float HALF_SIZE = 0.5f;
-        public static readonly int VERTEX_COUNT = 72;
+        public static readonly int VERTEX_COUNT = 36;
 
         public Block(Type type, Int3 pos)
         {
@@ -33,7 +33,7 @@ namespace MineBlock
         }
 
         // For DirectX
-        public void FillVertice(ref Vector4[] v, ref int offset, Vector3 overrideColor)
+        public void FillVertice(ref DXVertex[] v, ref int offset, Vector3 overrideColor)
         {
             // Position, Color
             var fpos = new Vector3(pos.X, pos.Y, pos.Z);
@@ -41,47 +41,53 @@ namespace MineBlock
                 ? overrideColor
                 : ((pos.X + pos.Y + pos.Z) % 2 == 0 ? new Vector3(0.3f, 0.3f, 0.3f) : new Vector3(1.0f, 1.0f, 1.0f));
 
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Front
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Down
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 1));
 
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // BACK 
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Up
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(1, 0));
 
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Top
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Face to +Y
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
 
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Bottom
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Face to -Y
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
 
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Left
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Face to -X
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
 
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f); // Right
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
-            v[offset++] = new Vector4(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE, 1.0f); v[offset++] = new Vector4(fcolor.X, fcolor.Y, fcolor.Z, 1.0f);
+            // Face to +X
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 0));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y - HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
+            v[offset++] = new DXVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
         }
 
         private Type type;
@@ -251,22 +257,22 @@ namespace MineBlock
         {
             int offset = 0;
 
-            int rayRegion = rayCollection.Count * 4 / 2;
+            int rayRegion = rayCollection.Count * 2;
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
             context.Draw(rayRegion, offset);
             offset += rayRegion;
 
-            int blockRegion = blockMap.Count * Block.VERTEX_COUNT / 2;
+            int blockRegion = blockMap.Count * Block.VERTEX_COUNT;
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.TriangleList;
             context.Draw(blockRegion, offset);
             offset += blockRegion;
         }
 
-        private Vector4[] GetVertices()
+        private DXVertex[] GetVertices()
         {
-            var vertices = new Vector4[
+            var vertices = new DXVertex[
                 blockMap.Count * Block.VERTEX_COUNT + // block
-                rayCollection.Count * 4 // ray
+                rayCollection.Count * 2 // ray
                 ];
 
             int offset = 0;
@@ -274,10 +280,8 @@ namespace MineBlock
             {
                 var ray = entry.Item1;
                 var color = entry.Item2;
-                vertices[offset++] = new Vector4(ray.Position, 1.0f);
-                vertices[offset++] = new Vector4(color, 1.0f);
-                vertices[offset++] = new Vector4(ray.Position + ray.Direction * 100.0f, 1.0f);
-                vertices[offset++] = new Vector4(color, 1.0f);
+                vertices[offset++] = new DXVertex(ray.Position, color);
+                vertices[offset++] = new DXVertex(ray.Position + ray.Direction * 100.0f, color);
             }
             foreach (Block block in blockMap.Values)
             {

@@ -15,6 +15,35 @@ using D3DDevice = SharpDX.Direct3D11.Device;
 
 namespace MineBlock
 {
+    struct DXVertex
+    {
+        public Vector3 pos;
+        public Vector3 col;
+        public Vector2 tex;
+
+        public DXVertex(Vector3 pos, Vector3 col)
+        {
+            this.pos = pos;
+            this.col = col;
+            this.tex = Vector2.Zero;
+        }
+        public DXVertex(Vector3 pos, Vector3 col, Vector2 tex)
+        {
+            this.pos = pos;
+            this.col = col;
+            this.tex = tex;
+        }
+
+        public static InputElement[] InputFormat
+        {
+            get => new InputElement[]
+            {
+                new InputElement("POSITION", 0, Format.R32G32B32_Float, 0, 0),
+                new InputElement("COLOR", 0, Format.R32G32B32_Float, 12, 0),
+                new InputElement("TEXCOORD", 0, Format.R32G32_Float, 24, 0),
+            };
+        }
+    }
     class Game
     {
         public Game()
@@ -29,20 +58,28 @@ namespace MineBlock
 
         public void Initialize(World world, Camera camera)
         {
-            mainWnd = new MainForm();
+            try
+            {
+                mainWnd = new MainForm();
 
-            // Create device and swapChain.
-            InitializeDX();
+                // Create device and swapChain.
+                InitializeDX();
 
-            // Load external resources.
-            LoadResources();
+                // Load external resources.
+                LoadResources();
 
-            // Initialize pipeline data & state
-            // * shaders
-            // * buffers
-            // * textures
-            // * set stage state
-            InitializeDXPipeline(world, camera);
+                // Initialize pipeline data & state
+                // * shaders
+                // * buffers
+                // * textures
+                // * set stage state
+                InitializeDXPipeline(world, camera);
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show(e.ToString());
+                throw e;
+            }
         }
         public void Start(ControlLogicMethod ControlLogic, GameLogicMethod GameLogic, RenderLogicMethod RenderLogic)
         {
@@ -50,11 +87,22 @@ namespace MineBlock
             {
                 mainWnd.Resize += (object sender, EventArgs e) =>
                 {
-                    windowResized = true;
+                    if (windowEvent < WindowEvent.Resize)
+                        windowEvent = WindowEvent.Resize;
                 };
                 mainWnd.KeyUp += (object sender, KeyEventArgs e) =>
                 {
-                    if (e.KeyCode == Keys.Escape) mainWnd.Close();
+                    if (e.KeyCode == Keys.F5)
+                    {
+                        if (windowEvent < WindowEvent.EnterFullScreen)
+                            windowEvent = WindowEvent.EnterFullScreen;
+                        else if (windowEvent < WindowEvent.ExitFullScreen)
+                            windowEvent = WindowEvent.ExitFullScreen;
+                    }
+                    else if (e.KeyCode == Keys.Escape)
+                    {
+                        mainWnd.Close();
+                    }
                 };
             }
             ControlLogic(mainWnd);
@@ -68,6 +116,12 @@ namespace MineBlock
             timer.Start();
             RenderLoop.Run(mainWnd, () =>
             {
+                if (windowEvent != WindowEvent.None)
+                {
+                    ResizeDXViews(windowEvent);
+                    windowEvent = WindowEvent.None;
+                }
+
                 var elapsedTimeMS = timer.ElapsedMilliseconds;
                 timer.Restart();
                 
@@ -111,7 +165,7 @@ namespace MineBlock
                 Usage = Usage.RenderTargetOutput,
                 // Set to 1: In windowed mode, the desktop is the front buffer.
                 // Set to 2: In full-screen mode, there is a dedicated front buffer.
-                BufferCount = 1,
+                BufferCount = SWAPCHAIN_BUFFER_COUNT,
                 OutputHandle = mainWnd.Handle,
                 IsWindowed = true,
                 SwapEffect = SwapEffect.Discard,
@@ -119,7 +173,7 @@ namespace MineBlock
 
             var factory = new Factory1();
             // 0: Intel 1: Nvidia 2: CPU
-            var adapter = factory.Adapters1[1];
+            var adapter = factory.Adapters1[0];
 
             device = new D3DDevice(adapter);
             swapChain = new SwapChain(factory, device, swapChainDesc);
@@ -132,15 +186,16 @@ namespace MineBlock
         {
             var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", "VS", "vs_4_0");
             vertexShader = new VertexShader(device, vertexShaderByteCode);
+
             var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", "PS", "ps_4_0");
             pixelShader = new PixelShader(device, pixelShaderByteCode);
 
             var signature = ShaderSignature.GetInputSignature(vertexShaderByteCode);
-            inputLayout = new InputLayout(device, signature, new[]
-            {
-                new InputElement("POSITION", 0, Format.R32G32B32A32_Float, 0, 0),
-                new InputElement("COLOR", 0, Format.R32G32B32A32_Float, 16, 0)
-            });
+            inputLayout = new InputLayout(device, signature, DXVertex.InputFormat);
+
+            var texture = DXTextureLoader.CreateTexture2DFromBitmap(device,
+                DXTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "Texture/Grass.png"));
+            textureSRV = new ShaderResourceView(device, texture);
         }
         private void InitializeDXPipeline(World world, Camera camera)
         {
@@ -164,15 +219,27 @@ namespace MineBlock
                 vertexBuffer,
                 Utilities.SizeOf<Vector4>() * 2, // vertex size
                 0));
+
             context.VertexShader.SetConstantBuffer(0, constantBuffer);
-            
             context.VertexShader.Set(vertexShader);
+
+            context.PixelShader.SetShaderResource(0, textureSRV);
             context.PixelShader.Set(pixelShader);
 
-            ResizeDXViews();
+            ResizeDXViews(WindowEvent.Resize);
         }
-        private void ResizeDXViews()
+        private void ResizeDXViews(WindowEvent e)
         {
+            // swapChain, backBuffer, renderTargetView, depthBuffer, depthStencilView
+
+            if (renderTargetView != null) renderTargetView.Dispose();
+            if (depthBuffer != null) depthBuffer.Dispose();
+            if (depthStencilView != null) depthStencilView.Dispose();
+
+            if (e == WindowEvent.EnterFullScreen) swapChain.SetFullscreenState(true, null);
+            else if (e == WindowEvent.ExitFullScreen) swapChain.SetFullscreenState(false, null);
+            swapChain.ResizeBuffers(SWAPCHAIN_BUFFER_COUNT, MainWindow.ClientSize.Width, MainWindow.ClientSize.Height, Format.Unknown, SwapChainFlags.None);
+
             viewport = new Viewport(0, 0, MainWindow.ClientSize.Width, MainWindow.ClientSize.Height, 0.0f, 1.0f);
             device.ImmediateContext.Rasterizer.SetViewport(viewport);
 
@@ -196,6 +263,7 @@ namespace MineBlock
             depthStencilView = new DepthStencilView(Device, depthBuffer);
 
             device.ImmediateContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
+            // MessageBox.Show("Size: " + MainWindow.ClientSize.ToString());
         }
         // Per frame.
         private void ClearScreen()
@@ -212,18 +280,22 @@ namespace MineBlock
         // ------- Internal State -------
 
         private Form mainWnd;
-        private bool windowResized = true;
+        private enum WindowEvent { None, Resize, EnterFullScreen, ExitFullScreen };
+        private WindowEvent windowEvent = WindowEvent.None;
 
         // -------- DX State --------
 
         private D3DDevice device;
         private SwapChain swapChain;
+        private readonly int SWAPCHAIN_BUFFER_COUNT = 1;
         // Shaders.
         private InputLayout inputLayout;
         private VertexShader vertexShader;
         private PixelShader pixelShader;
         // Buffers.
         private DXBufferManager bufferManager;
+        // Textures
+        private ShaderResourceView textureSRV;
 
         private Texture2D backBuffer;
         private Texture2D depthBuffer;

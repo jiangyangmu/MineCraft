@@ -160,7 +160,7 @@ namespace MineBlock
             var game = new Game();
             game.Initialize(world, camera);
 
-            camera.AspectRatio = game.MainWindow.Width / (float)game.MainWindow.Height;
+            camera.AspectRatio = game.MainWindow.ClientSize.Width / (float)game.MainWindow.ClientSize.Height;
 
             game.Start(
                 ControlLogic: (Control mainWnd) =>
@@ -180,6 +180,10 @@ namespace MineBlock
                     mainWnd.KeyUp += (sender, e) =>
                     {
                         gameState.OnKeyUp(e.KeyCode);
+                    };
+                    mainWnd.Resize += (sender, e) =>
+                    {
+                        camera.AspectRatio = mainWnd.ClientSize.Width / (float)mainWnd.ClientSize.Height;
                     };
                 },
                 GameLogic: (float elapsedTimeMS) =>

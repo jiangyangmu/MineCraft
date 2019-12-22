@@ -168,7 +168,6 @@ namespace WindowsForms
                     Utilities.Dispose(ref renderView);
                     Utilities.Dispose(ref depthBuffer);
                     Utilities.Dispose(ref depthView);
-
                     // Resize the backbuffer
                     swapChain.ResizeBuffers(desc.BufferCount, form.ClientSize.Width, form.ClientSize.Height, Format.Unknown, SwapChainFlags.None);
 
