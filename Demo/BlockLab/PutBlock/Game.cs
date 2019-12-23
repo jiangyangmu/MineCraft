@@ -86,7 +86,8 @@ namespace PutBlock
                     {
                         if ((mainWnd as MainForm).IsMouseLocked)
                             (mainWnd as MainForm).UnlockMouse();
-                        mainWnd.Close();
+                        else
+                            mainWnd.Close();
                     }
                 };
             }

@@ -18,12 +18,16 @@ namespace PutBlock
 
         public void LockMouse()
         {
+            if (isMouseLocked)
+                return;
             isMouseLocked = true;
             Cursor.Hide();
             MouseMove += DoLockMouse;
         }
         public void UnlockMouse()
         {
+            if (!isMouseLocked)
+                return;
             MouseMove -= DoLockMouse;
             Cursor.Show();
             isMouseLocked = false;
