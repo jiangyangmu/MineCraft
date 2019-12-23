@@ -9,6 +9,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "1_PickBlock", "PickBlock\1_
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "2_MineBlock", "MineBlock\2_MineBlock.csproj", "{88CA177F-CD65-4ED5-A16F-446069C71811}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "3_PutBlock", "PutBlock\3_PutBlock.csproj", "{F9AE9F58-518F-4EE2-94FC-BC92D03399AF}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{88CA177F-CD65-4ED5-A16F-446069C71811}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{88CA177F-CD65-4ED5-A16F-446069C71811}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{88CA177F-CD65-4ED5-A16F-446069C71811}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F9AE9F58-518F-4EE2-94FC-BC92D03399AF}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F9AE9F58-518F-4EE2-94FC-BC92D03399AF}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F9AE9F58-518F-4EE2-94FC-BC92D03399AF}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F9AE9F58-518F-4EE2-94FC-BC92D03399AF}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
