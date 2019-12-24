@@ -19,73 +19,56 @@ namespace CreateBuffer
         
         static void Main()
         {
-            string info = "";
-            try
-            {
-                InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain);
+            InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain);
+            // TestParameters(mainWnd, device, swapChain);
+            TestDynamicVertexBuffer(device);
+        }
 
-                // Possible combination
-                // Create
-                //  {Immutable, Default, Dynamic, Staging} x {none, read, write, read_write}
-                // CPU side operations
-                //  {read, write, read_write, write_discard, write_no_override}
-                Tuple<string, ResourceUsage>[] usageList =
-                {
-                    new Tuple<string, ResourceUsage>("Default", ResourceUsage.Default),
-                    new Tuple<string, ResourceUsage>("Dynamic", ResourceUsage.Dynamic),
-                    new Tuple<string, ResourceUsage>("Immutable", ResourceUsage.Immutable),
-                    new Tuple<string, ResourceUsage>("Staging", ResourceUsage.Staging),
-                };
-                Tuple<string, CpuAccessFlags>[] cpuFlagList =
-                {
-                    new Tuple<string, CpuAccessFlags>("None", CpuAccessFlags.None),
-                    new Tuple<string, CpuAccessFlags>("Read", CpuAccessFlags.Read),
-                    new Tuple<string, CpuAccessFlags>("Write", CpuAccessFlags.Write),
-                    new Tuple<string, CpuAccessFlags>("RW", CpuAccessFlags.Read | CpuAccessFlags.Write),
-                };
+        static void InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain)
+        {
+            mainWnd = new Form1();
 
-                // Correct combination
-                // Create
-                //  1. Default + none
-                //  2. Dynamic + write
-                //  3. Immutable + none
-                // CPU side operations
-                //  2. write_discard
-                foreach (var usage in usageList)
-                {
-                    foreach (var cpuFlag in cpuFlagList)
-                    {
-                        info += "----------- " + usage.Item1 + " + " + cpuFlag.Item1 + " -----------\r\n";
-                        try
-                        {
-                            var vertexData = new[] { new Vector4(1, 2, 3, 4) };
-                            var vertexData2 = new[] { new Vector4(11, 22, 33, 44) };
-                            info += "Create:\r\n";
-                            var vertexBuffer = CreateVertexBuffer(ref device, vertexData, usage.Item2, cpuFlag.Item2);
-                            info += "  Success.\r\n";
-                            var context = device.ImmediateContext;
-                            info += ProfileBuffer(ref context, ref vertexBuffer, vertexData2);
-                            vertexBuffer.Dispose();
-                        }
-                        catch (Exception e)
-                        {
-                            info += e.Message;
-                        }
-                    }
-                }
-            }
-            catch (Exception e)
+            var bufferDesc = new ModeDescription(Format.Unknown)
             {
-                info += "----------- Global Exception -----------\r\n";
-                info += e.ToString();
-            }
-            finally
+                Width = mainWnd.ClientSize.Width,
+                Height = mainWnd.ClientSize.Height,
+                RefreshRate = new Rational(60, 1),
+                Format = Format.R8G8B8A8_UNorm,
+                ScanlineOrdering = DisplayModeScanlineOrder.Unspecified,
+                Scaling = DisplayModeScaling.Unspecified
+            };
+            var sampleDesc = new SampleDescription(0, 0)
             {
-                var mb = new ScrollableMessageBox();
-                mb.showText.Text = info;
-                mb.Show();
-                Application.Run(mb);
-            }
+                Count = 1,
+                Quality = 0
+            };
+            var bufferUsage = Usage.RenderTargetOutput;
+            int bufferCount = 1;
+            var swapEffect = SwapEffect.Discard;
+
+            var swapChainDesc = new SwapChainDescription()
+            {
+                ModeDescription = bufferDesc,
+                SampleDescription = sampleDesc,
+                Usage = bufferUsage,
+                BufferCount = bufferCount,
+                OutputHandle = mainWnd.Handle,
+                IsWindowed = true,
+                SwapEffect = swapEffect,
+            };
+
+            var factory = new Factory1();
+            // 0: Intel 1: Nvidia 2: CPU
+            var adapter = factory.Adapters1[1];
+            device = new D3DDevice(adapter);
+            swapChain = new SwapChain(factory, device, swapChainDesc);
+            MessageBox.Show(adapter.Description.Description);
+            //D3DDevice.CreateWithSwapChain(
+            //    DriverType.Hardware,
+            //    DeviceCreationFlags.None,
+            //    swapChainDesc,
+            //    out device,
+            //    out swapChain);
         }
 
         static D3DBuffer CreateVertexBuffer<T>(ref D3DDevice device, T[] vertexData, ResourceUsage resourceUsage, CpuAccessFlags cpuAccessFlags) where T : struct
@@ -276,51 +259,102 @@ namespace CreateBuffer
             return info;
         }
 
-        static void InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain)
+        static void TestParameters(Form mainWnd, D3DDevice device, SwapChain swapChain)
         {
-            mainWnd = new Form1();
-
-            var bufferDesc = new ModeDescription(Format.Unknown)
+            string info = "";
+            try
             {
-                Width = mainWnd.ClientSize.Width,
-                Height = mainWnd.ClientSize.Height,
-                RefreshRate = new Rational(60, 1),
-                Format = Format.R8G8B8A8_UNorm,
-                ScanlineOrdering = DisplayModeScanlineOrder.Unspecified,
-                Scaling = DisplayModeScaling.Unspecified
-            };
-            var sampleDesc = new SampleDescription(0, 0)
-            {
-                Count = 1,
-                Quality = 0
-            };
-            var bufferUsage = Usage.RenderTargetOutput;
-            int bufferCount = 1;
-            var swapEffect = SwapEffect.Discard;
+                // Possible combination
+                // Create
+                //  {Immutable, Default, Dynamic, Staging} x {none, read, write, read_write}
+                // CPU side operations
+                //  {read, write, read_write, write_discard, write_no_override}
+                Tuple<string, ResourceUsage>[] usageList =
+                {
+                    new Tuple<string, ResourceUsage>("Default", ResourceUsage.Default),
+                    new Tuple<string, ResourceUsage>("Dynamic", ResourceUsage.Dynamic),
+                    new Tuple<string, ResourceUsage>("Immutable", ResourceUsage.Immutable),
+                    new Tuple<string, ResourceUsage>("Staging", ResourceUsage.Staging),
+                };
+                Tuple<string, CpuAccessFlags>[] cpuFlagList =
+                {
+                    new Tuple<string, CpuAccessFlags>("None", CpuAccessFlags.None),
+                    new Tuple<string, CpuAccessFlags>("Read", CpuAccessFlags.Read),
+                    new Tuple<string, CpuAccessFlags>("Write", CpuAccessFlags.Write),
+                    new Tuple<string, CpuAccessFlags>("RW", CpuAccessFlags.Read | CpuAccessFlags.Write),
+                };
 
-            var swapChainDesc = new SwapChainDescription()
+                // Correct combination
+                // Create
+                //  1. Default + none
+                //  2. Dynamic + write
+                //  3. Immutable + none
+                // CPU side operations
+                //  2. write_discard
+                foreach (var usage in usageList)
+                {
+                    foreach (var cpuFlag in cpuFlagList)
+                    {
+                        info += "----------- " + usage.Item1 + " + " + cpuFlag.Item1 + " -----------\r\n";
+                        try
+                        {
+                            var vertexData = new[] { new Vector4(1, 2, 3, 4) };
+                            var vertexData2 = new[] { new Vector4(11, 22, 33, 44) };
+                            info += "Create:\r\n";
+                            var vertexBuffer = CreateVertexBuffer(ref device, vertexData, usage.Item2, cpuFlag.Item2);
+                            info += "  Success.\r\n";
+                            var context = device.ImmediateContext;
+                            info += ProfileBuffer(ref context, ref vertexBuffer, vertexData2);
+                            vertexBuffer.Dispose();
+                        }
+                        catch (Exception e)
+                        {
+                            info += e.Message;
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
             {
-                ModeDescription = bufferDesc,
-                SampleDescription = sampleDesc,
-                Usage = bufferUsage,
-                BufferCount = bufferCount,
-                OutputHandle = mainWnd.Handle,
-                IsWindowed = true,
-                SwapEffect = swapEffect,
-            };
+                info += "----------- Global Exception -----------\r\n";
+                info += e.ToString();
+            }
+            finally
+            {
+                var mb = new ScrollableMessageBox();
+                mb.showText.Text = info;
+                mb.Show();
+                Application.Run(mb);
+            }
+        }
+        static void TestDynamicVertexBuffer(D3DDevice device)
+        {
+            string info = "";
+            try
+            {
+                var vb = new DynamicVertexBuffer(ref device);
 
-            var factory = new Factory1();
-            // 0: Intel 1: Nvidia 2: CPU
-            var adapter = factory.Adapters1[1];
-            device = new D3DDevice(adapter);
-            swapChain = new SwapChain(factory, device, swapChainDesc);
-            MessageBox.Show(adapter.Description.Description);
-            //D3DDevice.CreateWithSwapChain(
-            //    DriverType.Hardware,
-            //    DeviceCreationFlags.None,
-            //    swapChainDesc,
-            //    out device,
-            //    out swapChain);
+                var vertices0 = new[] { new Vector4(1, 2, 3, 4) };
+                var vertices1 = new[] { new Vector4(5, 6, 7, 8) };
+                var vertices2 = new[] { new Vector4(9, 10, 11, 12) };
+                vb.Init(vertices0);
+                vb.Update(vertices1);
+                vb.Update(vertices2);
+
+                vb.Dispose();
+            }
+            catch (Exception e)
+            {
+                info += "----------- Global Exception -----------\r\n";
+                info += e.ToString();
+            }
+            finally
+            {
+                var mb = new ScrollableMessageBox();
+                mb.showText.Text = info;
+                mb.Show();
+                Application.Run(mb);
+            }
         }
     }
 }

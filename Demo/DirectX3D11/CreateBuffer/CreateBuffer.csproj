@@ -76,6 +76,7 @@
     <Compile Include="ScrollableMessageBox.Designer.cs">
       <DependentUpon>ScrollableMessageBox.cs</DependentUpon>
     </Compile>
+    <Compile Include="VertexBuffer.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
