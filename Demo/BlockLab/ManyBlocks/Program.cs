@@ -57,12 +57,19 @@ namespace WorldOfBlocks
                 IsWindowed = true,
                 SwapEffect = swapEffect,
             };
-            D3DDevice.CreateWithSwapChain(
-                DriverType.Hardware,
-                DeviceCreationFlags.None,
-                swapChainDesc,
-                out device,
-                out swapChain);
+
+            var factory = new Factory1();
+            // 0: Intel 1: Nvidia 2: CPU
+            var adapter = factory.Adapters1[0];
+            device = new D3DDevice(adapter);
+            swapChain = new SwapChain(factory, device, swapChainDesc);
+
+            //D3DDevice.CreateWithSwapChain(
+            //    DriverType.Hardware,
+            //    DeviceCreationFlags.None,
+            //    swapChainDesc,
+            //    out device,
+            //    out swapChain);
         }
         static void RunDirectX(MainForm mainWnd, ref D3DDevice device, SwapChain swapChain, ref World blockWorld)
         {
