@@ -13,7 +13,7 @@ namespace PutBlock
         public enum Type
         {
             GRASS,
-            VIRTUAL,
+            PUT_SLOT,
         };
         public static readonly float SIZE = 1.0f;
         public static readonly float HALF_SIZE = 0.5f;
@@ -183,7 +183,7 @@ namespace PutBlock
                 v[offset++] = new D3DVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z - HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 1));
                 v[offset++] = new D3DVertex(new Vector3(fpos.X + HALF_SIZE, pos.Y + HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z), new Vector2(0.5f, 0));
             }
-            else if (type == Type.VIRTUAL)
+            else if (type == Type.PUT_SLOT)
             {
                 // Top
                 v[offset++] = new D3DVertex(new Vector3(fpos.X - HALF_SIZE, pos.Y - HALF_SIZE, pos.Z + HALF_SIZE), new Vector3(fcolor.X, fcolor.Y, fcolor.Z));
@@ -222,7 +222,25 @@ namespace PutBlock
     }
     class World
     {
-        // Left-handed, X => Right, Y => Forward, -Z => Up
+        public World()
+        {
+            Forward = new Int3(1, 0, 0);
+            Right = new Int3(0, 1, 0);
+            Up = new Int3(0, 0, 1);
+            Origin = new Int3(0, 0, 0);
+
+            RightF = new Vector3(Right.X, Right.Y, Right.Z);
+            ForwardF = new Vector3(Forward.X, Forward.Y, Forward.Z);
+            UpF = new Vector3(Up.X, Up.Y, Up.Z);
+            OriginF = new Vector3(Origin.X, Origin.Y, Origin.Z);
+
+            blockMap = new Dictionary<string, Block>();
+            rayCollection = new List<Tuple<Ray, Vector3>>();
+        }
+
+        // Properties
+
+        // Coordination: left-handed, X => Forward, Y => Right, Z => Up
         public Int3 Right { get; }
         public Int3 Up { get; }
         public Int3 Forward { get; }
@@ -249,38 +267,9 @@ namespace PutBlock
                 "";
         }
 
-        public World()
-        {
-            Right = new Int3(1, 0, 0);
-            Forward = new Int3(0, 1, 0);
-            Up = new Int3(0, 0, 1);
-            Origin = new Int3(0, 0, 0);
+        // Operations
 
-            RightF = new Vector3(1, 0, 0);
-            ForwardF = new Vector3(0, 1, 0);
-            UpF = new Vector3(0, 0, 1);
-            OriginF = new Vector3(0, 0, 0);
-
-            blockMap = new Dictionary<string, Block>();
-            rayCollection = new List<Tuple<Ray, Vector3>>();
-        }
-        public World(Int3 right, Int3 forward, Int3 up)
-        {
-            Right = right;
-            Forward = forward;
-            Up = up;
-            Origin = new Int3(0, 0, 0);
-
-            RightF = new Vector3(Right.X, Right.Y, Right.Z);
-            ForwardF = new Vector3(Forward.X, Forward.Y,Forward.Z);
-            UpF = new Vector3(Up.X, Up.Y, Up.Z);
-            OriginF = new Vector3(Origin.X, Origin.Y,Origin.Z);
-
-            blockMap = new Dictionary<string, Block>();
-            rayCollection = new List<Tuple<Ray, Vector3>>();
-        }
-
-        public bool AddBlock(Int3 pos, Block.Type type)
+        public bool AddBlock(Block.Type type, Int3 pos)
         {
             var key = pos.ToString();
 
@@ -297,13 +286,13 @@ namespace PutBlock
             }
         }
         // left, right, forward, backward >= 0
-        public void AddBlockPlane(Int3 pos, Block.Type type, int left, int right, int forward, int backward)
+        public void AddBlockPlane(Block.Type type, Int3 pos, int left, int right, int forward, int backward)
         {
             for (int r = -left; r <= right; ++r)
             {
                 for (int c = -backward; c <= forward; ++c)
                 {
-                    AddBlock(new Int3(pos.X + r, pos.Y + c, pos.Z), type);
+                    AddBlock(type, new Int3(pos.X + r, pos.Y + c, pos.Z));
                 }
             }
         }
@@ -360,7 +349,7 @@ namespace PutBlock
         {
             if (putBlock != null)
             {
-                AddBlock(putBlock.Pos, Block.Type.GRASS);
+                AddBlock(Block.Type.GRASS, putBlock.Pos);
                 putBlock = null;
                 return true;
             }
@@ -412,7 +401,7 @@ namespace PutBlock
                 {
                     if (putBlock == null || putBlock.Pos != putPos)
                     {
-                        putBlock = new Block(Block.Type.VIRTUAL, putPos.Value);
+                        putBlock = new Block(Block.Type.PUT_SLOT, putPos.Value);
                         isDirty = true;
                     }
                 }
@@ -453,6 +442,8 @@ namespace PutBlock
             return pos.Z + Block.HALF_SIZE;
         }
 
+        // Implementation
+
         // For DirectX
         public void UpdateVertexBuffer(D3DDynamicVertexBuffer vertexBuffer)
         {
@@ -479,7 +470,7 @@ namespace PutBlock
 
             if (putBlock != null)
             {
-                int virtualBlockRegion = 1 * Block.VertexCount(Block.Type.VIRTUAL);
+                int virtualBlockRegion = 1 * Block.VertexCount(Block.Type.PUT_SLOT);
                 context.InputAssembler.PrimitiveTopology = PrimitiveTopology.LineList;
                 context.Draw(virtualBlockRegion, offset);
                 offset += virtualBlockRegion;
@@ -491,7 +482,7 @@ namespace PutBlock
             var vertices = new D3DVertex[
                 rayCollection.Count * 2 + // ray
                 blockMap.Count * Block.VertexCount(Block.Type.GRASS) + // grass block + mine block
-                (putBlock != null ? 1 : 0) * Block.VertexCount(Block.Type.VIRTUAL) + // put block
+                (putBlock != null ? 1 : 0) * Block.VertexCount(Block.Type.PUT_SLOT) + // put block
                 0];
 
             int offset = 0;

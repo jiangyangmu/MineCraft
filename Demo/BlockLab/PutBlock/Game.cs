@@ -23,7 +23,7 @@ namespace PutBlock
         {
         }
 
-        public Form MainWindow { get => mainWnd; }
+        public MainForm MainWindow { get => mainWnd; }
         // D3D Objects
         public D3DDevice Device { get => device; }
         public DeviceContext Context { get => device.ImmediateContext; }
@@ -32,7 +32,7 @@ namespace PutBlock
         // D2D Objects
         public D2DDeviceContext D2DDeviceContext { get => d2dDeviceContext; }
 
-        public void Initialize(World world, Camera camera)
+        public void Initialize(World world)
         {
             try
             {
@@ -49,7 +49,7 @@ namespace PutBlock
                 // * buffers
                 // * textures
                 // * set stage state
-                InitializeD3DPipeline(world, camera);
+                InitializeD3DPipeline(world);
 
                 // Initialize render targets.
                 ResetRenderTargets(WindowEvent.Resize);
@@ -66,7 +66,7 @@ namespace PutBlock
             {
                 mainWnd.MouseDown += (object sender, MouseEventArgs e) =>
                 {
-                    (mainWnd as MainForm).LockMouse();
+                    mainWnd.LockMouse();
                 };
                 mainWnd.Resize += (object sender, EventArgs e) =>
                 {
@@ -84,8 +84,8 @@ namespace PutBlock
                     }
                     else if (e.KeyCode == Keys.Escape)
                     {
-                        if ((mainWnd as MainForm).IsMouseLocked)
-                            (mainWnd as MainForm).UnlockMouse();
+                        if (mainWnd.IsMouseLocked)
+                            mainWnd.UnlockMouse();
                         else
                             mainWnd.Close();
                     }
@@ -117,7 +117,7 @@ namespace PutBlock
 
                 ClearScreen();
                 RenderLogic(out string debugText);
-                (mainWnd as MainForm).debugText.Text =
+                mainWnd.debugText.Text =
                     debugText +
                     "Mouse Captured: " + mainWnd.Capture + "\r\n" +
                     "";
@@ -193,7 +193,7 @@ namespace PutBlock
                 D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "Texture/Grass.png"));
             textureSRV = new ShaderResourceView(device, texture);
         }
-        private void InitializeD3DPipeline(World world, Camera camera)
+        private void InitializeD3DPipeline(World world)
         {
             // Setup graphics pipeline
 
@@ -213,7 +213,7 @@ namespace PutBlock
             context.InputAssembler.PrimitiveTopology = PrimitiveTopology.PointList;
             context.InputAssembler.SetVertexBuffers(0, new VertexBufferBinding(
                 vertexBuffer,
-                Utilities.SizeOf<Vector4>() * 2, // vertex size
+                Utilities.SizeOf<D3DVertex>(),
                 0));
 
             context.VertexShader.SetConstantBuffer(0, constantBuffer);
@@ -284,7 +284,7 @@ namespace PutBlock
         
         // ------- Internal State -------
 
-        private Form mainWnd;
+        private MainForm mainWnd;
         private enum WindowEvent { None, Resize, EnterFullScreen, ExitFullScreen };
         private WindowEvent windowEvent = WindowEvent.None;
 

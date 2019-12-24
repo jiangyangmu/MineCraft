@@ -65,10 +65,9 @@ namespace PutBlock
         static void Main()
         {
             var world = new World();
-            // world.AddBlockPlane(world.Origin, Block.Type.GRASS, 1, 1, 1, 1);
-            world.AddBlockPlane(world.Origin + world.Up * 2, Block.Type.GRASS, 6, 6, 6, 6);
-            world.AddBlockPlane(world.Origin + world.Up, Block.Type.GRASS, 8, 8, 8, 8);
-            world.AddBlockPlane(world.Origin, Block.Type.GRASS, 10, 10, 10, 10);
+            world.AddBlockPlane(Block.Type.GRASS, world.Origin + world.Up * 2, 6, 6, 6, 6);
+            world.AddBlockPlane(Block.Type.GRASS, world.Origin + world.Up, 8, 8, 8, 8);
+            world.AddBlockPlane(Block.Type.GRASS, world.Origin, 10, 10, 10, 10);
             world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
             world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
             world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
@@ -79,35 +78,16 @@ namespace PutBlock
                 );
 
             var game = new Game();
-            game.Initialize(world, camera);
+            game.Initialize(world);
 
             camera.AspectRatio = game.MainWindow.ClientSize.Width / (float)game.MainWindow.ClientSize.Height;
 
             var player = new PlayerController(world.OriginF + 5.0f * world.UpF);
 
-            // Toolbar
-            var _2dBlackBrush = new SolidColorBrush(game.D2DDeviceContext, Color.Black);
-            var _2dWhiteBrush = new SolidColorBrush(game.D2DDeviceContext, Color.White);
-            var _imageSource = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "GUI/ToolBarBox.jpg");
-            var _2dImage = Bitmap.FromWicBitmap(
-                        game.D2DDeviceContext,
-                        _imageSource,
-                        new BitmapProperties(
-                            new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied)
-                            ));
-            var _imageSource2 = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "GUI/ToolBarSelect.png");
-            var _2dImage2 = Bitmap.FromWicBitmap(
-                        game.D2DDeviceContext,
-                        _imageSource2,
-                        new BitmapProperties(
-                            new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied)
-                            ));
-            var _selected = 0;
-            var _counter = 0;
-
-            var _textFactory = new SharpDX.DirectWrite.Factory();
-            var _textFormat = new SharpDX.DirectWrite.TextFormat(_textFactory, "Consolas", 30.0f);
-            bool _resized = false;
+            bool windowResized = false;
+            var gui = new GUI();
+            gui.LoadResources();
+            gui.Reset(game.D2DDeviceContext);
 
             var gameState = new GameState();
             game.Start(
@@ -122,7 +102,7 @@ namespace PutBlock
                     {
                         camera.AspectRatio = mainWnd.ClientSize.Width / (float)mainWnd.ClientSize.Height;
 
-                        _resized = true;
+                        windowResized = true;
                     };
                 },
                 GameLogic: (float elapsedTimeMS) =>
@@ -130,12 +110,17 @@ namespace PutBlock
                     int ms = (int)(1000.0f * 1.7 / 120.0f - elapsedTimeMS);
                     Thread.Sleep(ms > 0 ? ms : 0);
 
+                    // Update player state
+
                     player.Update(
                         elapsedTimeMS,
                         world.Ground(new Int3((int)player.Position.X, (int)player.Position.Y, (int)(player.Position.Z))));
 
+                    // Update general game state
+
                     gameState.Update(elapsedTimeMS);
 
+                    // Process user command
 
                     if (gameState.Shoot)
                     {
@@ -146,51 +131,29 @@ namespace PutBlock
                     {
                         gameState.Mine = false;
                         if (world.DoMineBlock())
-                            ++_counter;
+                            ++gui.InventoryBlockCount;
                     }
                     else if (gameState.Put)
                     {
                         gameState.Put = false;
-                        if (_counter > 0 && world.DoPutBlock())
-                            --_counter;
+                        if (gui.InventoryBlockCount > 0 && world.DoPutBlock())
+                            --gui.InventoryBlockCount;
                     }
+
                     // Mark picked block as red.
                     world.PickTest(new Ray(camera.Pos, camera.Orientation), 5);
-
-                    if (_resized)
-                    {
-                        _2dBlackBrush?.Dispose();
-                        _2dWhiteBrush?.Dispose();
-                        _2dImage?.Dispose();
-                        _2dImage2?.Dispose();
-                        _textFormat?.Dispose();
-
-                        _2dBlackBrush = new SolidColorBrush(game.D2DDeviceContext, Color.Black);
-                        _2dWhiteBrush = new SolidColorBrush(game.D2DDeviceContext, Color.White);
-                        _2dImage = Bitmap.FromWicBitmap(
-                            game.D2DDeviceContext,
-                            _imageSource,
-                            new BitmapProperties(
-                                new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied)
-                                ));
-                        _2dImage2 = Bitmap.FromWicBitmap(
-                            game.D2DDeviceContext,
-                            _imageSource2,
-                            new BitmapProperties(
-                                new PixelFormat(SharpDX.DXGI.Format.R8G8B8A8_UNorm, SharpDX.Direct2D1.AlphaMode.Premultiplied)
-                                ));
-                        _textFormat = new SharpDX.DirectWrite.TextFormat(_textFactory, "Consolas", 30.0f);
-                    }
                 },
                 RenderLogic: (out string debugText) =>
                 {
                     debugText =
                     "FPS: " + gameState.FPS + "\r\n" +
-                    "Mouse Delta: " + (game.MainWindow as MainForm).AbsMousePosition + "\r\n" +
+                    "Mouse Delta: " + game.MainWindow.AbsMousePosition + "\r\n" +
                     camera.DebugString +
                     world.DebugString +
                     player.DebugString +
                     "";
+
+                    // D3D Render
 
                     var matViewProj = camera.ViewMatrix * camera.ProjMatrix;
                     matViewProj.Transpose();
@@ -200,52 +163,16 @@ namespace PutBlock
                     world.UpdateVertexBuffer(game.BufferManager.GetVB());
                     world.CallDraws(game.Context);
 
-                    var X = game.D2DDeviceContext.Size.Width;
-                    var Y = game.D2DDeviceContext.Size.Height;
+                    // D2D Render
 
+                    if (windowResized)
+                    {
+                        gui.Reset(game.D2DDeviceContext);
+                    }
                     game.D2DDeviceContext.BeginDraw();
 
-                    // Aim cross
-                    game.D2DDeviceContext.FillRectangle(
-                        new SharpDX.Mathematics.Interop.RawRectangleF(
-                            X / 2 - 20, Y / 2 - 5,
-                            X / 2 + 20, Y / 2 + 5),
-                        _2dWhiteBrush);
-                    game.D2DDeviceContext.FillRectangle(
-                       new SharpDX.Mathematics.Interop.RawRectangleF(
-                           X / 2 - 5, Y / 2 - 20,
-                           X / 2 + 5, Y / 2 + 20),
-                       _2dWhiteBrush);
-                    // Toolbar
-                    var x = _2dImage.Size.Width;
-                    var y = _2dImage.Size.Height;
-                    for (int i = 0; i <= 11; ++i)
-                    {
-                        float shift = i - 5.5f;
-                        game.D2DDeviceContext.DrawImage(
-                            _2dImage,
-                            new SharpDX.Mathematics.Interop.RawVector2(
-                                X / 2 - shift * x, Y - y)
-                            );
-                    }
-                    var x2 = _2dImage2.Size.Width;
-                    var y2 = _2dImage2.Size.Height;
-                    game.D2DDeviceContext.DrawImage(
-                        _2dImage2,
-                        new SharpDX.Mathematics.Interop.RawVector2(
-                            X / 2 - (_selected + 5.55f) * x, Y - y2)
-                        );
-                    // Toolbar items
-                    var _counterStr = _counter.ToString();
-                    game.D2DDeviceContext.DrawText(
-                        _counterStr,
-                        _textFormat,
-                        new SharpDX.Mathematics.Interop.RawRectangleF(
-                            X / 2 - (5.5f - 0.5f) * x - 0.3f * _textFormat.FontSize * _counterStr.Length, Y - 0.85f * y,
-                            X / 2 - (4.5f - 0.5f) * x - 0.3f * _textFormat.FontSize * _counterStr.Length, Y
-                            ),
-                        _2dWhiteBrush
-                        );
+                    gui.DrawAimCross();
+                    gui.DrawToolBar(11, 0, gui.InventoryBlockCount);
 
                     game.D2DDeviceContext.EndDraw();
                 }
