@@ -72,6 +72,7 @@ namespace BlockMarket
             world.BlockManager.AddBlockPlane(BlockRenderer.SandBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 3), 0, 0, 5, 5);
             world.BlockManager.AddBlockPlane(BlockRenderer.StoneBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 4), 0, 0, 5, 5);
             world.BlockManager.AddTree(world.Origin + world.Right * 8, 7);
+            world.BlockManager.AddWaterPool(world.Origin + world.Right * -8 + world.Forward * -3 + world.Up, world.Origin + world.Right * -5 + world.Forward * 3 + world.Up * 4);
             world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
             world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
             world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
@@ -95,6 +96,7 @@ namespace BlockMarket
             gui.Reset(game.D2DDeviceContext);
 
             var gameState = new GameState();
+            var deltaMS = 0.0f;
             game.Start(
                 ControlLogic: (Control mainWnd) =>
                 {
@@ -128,14 +130,21 @@ namespace BlockMarket
                 },
                 GameLogic: (float elapsedTimeMS) =>
                 {
-                    int ms = (int)(1000.0f * 1.7 / 120.0f - elapsedTimeMS);
+                    int ms = (int)(1000.0f * 1.7 / 60.0f - elapsedTimeMS);
                     Thread.Sleep(ms > 0 ? ms : 0);
 
                     // Update player state
 
+                    float ground = world.Ground(new Int3((int)player.Position.X, (int)player.Position.Y, (int)(player.Position.Z)));
+                    float buoyancy = 0.0f;
+                    if (world.InLiquid(new Int3((int)player.Position.X, (int)player.Position.Y, (int)(camera.Pos.Z - 2.0f))))
+                    {
+                        buoyancy = 8.8f;
+                    }
                     player.Update(
                         elapsedTimeMS,
-                        world.Ground(new Int3((int)player.Position.X, (int)player.Position.Y, (int)(player.Position.Z))));
+                        ground,
+                        buoyancy);
 
                     // Update general game state
 
@@ -163,6 +172,13 @@ namespace BlockMarket
 
                     // Mark picked block as red.
                     world.PickTest(new Ray(camera.Pos, camera.Orientation), 5);
+
+                    deltaMS += elapsedTimeMS;
+                    if (deltaMS > 100.0f)
+                    {
+                        world.UpdateLiquidTexture();
+                        deltaMS -= 100.0f;
+                    }
                 },
                 RenderLogic: (out string debugText) =>
                 {

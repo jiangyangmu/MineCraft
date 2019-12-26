@@ -130,30 +130,36 @@ namespace BlockMarket
         }
     }
 
-    struct BlockRenderer
+    class BlockRenderer
     {
         public enum RenderType
         {
             NULL,
             TEXTURE,
             TEXTURE_ALPHA,
+            LIQUID,
             LINE,
         }
 
-        public static BlockRenderer NullRender { get => new BlockRenderer(RenderType.NULL, PrimitiveTopology.Undefined, "", ""); }
-        public static BlockRenderer PutBlockRender { get => new BlockRenderer(RenderType.LINE, PrimitiveTopology.LineList, "PS_Line_Block", "Grass", Vector3.One); }
-        public static BlockRenderer GrassBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Grass"); }
-        public static BlockRenderer SandBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Sand"); }
-        public static BlockRenderer StoneBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Stone"); }
-        public static BlockRenderer OakWoodBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "OakWood"); }
-        public static BlockRenderer OakLeafBlockRender { get => new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Texture_Alpha_Block", "OakLeaf"); }
-        public static BlockRenderer GlassBlockRender { get => new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Texture_Alpha_Block", "Glass"); }
+        public static BlockRenderer NullRender = new BlockRenderer(RenderType.NULL, PrimitiveTopology.Undefined, "", "");
+        public static BlockRenderer PutBlockRender = new BlockRenderer(RenderType.LINE, PrimitiveTopology.LineList, "PS_Line_Block", "Grass", Vector3.One);
+        public static BlockRenderer GrassBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Grass");
+        public static BlockRenderer SandBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Sand");
+        public static BlockRenderer StoneBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Stone");
+        public static BlockRenderer OakWoodBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "OakWood");
+        public static BlockRenderer OakLeafBlockRender = new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Transparent_Block", "OakLeaf");
+        public static BlockRenderer GlassBlockRender = new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Transparent_Block", "Glass");
+        public static BlockRenderer WaterBlockRender = new BlockRenderer(RenderType.LIQUID, PrimitiveTopology.TriangleList, "PS_Liquid_Block", "Water");
+        public static bool DelayRendering(RenderType type)
+        {
+            return type == RenderType.TEXTURE_ALPHA || type == RenderType.LIQUID;
+        }
 
         public RenderType Type { get; }
         public PrimitiveTopology Topology { get; }
         public string PSShaderName { get; }
         public string TextureName { get; }
-        public Vector3 Color { get; }
+        public Vector3 Color { get; private set; }
 
         public int GetBlockVertexCount()
         {
@@ -192,6 +198,10 @@ namespace BlockMarket
             }
         }
 
+        public void ChangeColor(Vector3 color)
+        {
+            Color = color;
+        }
         public static ItemType ToItemType(BlockRenderer render)
         {
             if (render.TextureName == "Grass")
@@ -311,6 +321,19 @@ namespace BlockMarket
                     AddBlockPlane(BlockRenderer.OakLeafBlockRender, new BlockObject(level + shift), 0, 0, 0, 0);
                 }
                 level += Int3.UnitZ;
+            }
+        }
+        public void AddWaterPool(Int3 min, Int3 max)
+        {
+            for (int x = min.X; x <= max.X; ++x)
+            {
+                for (int y = min.Y; y <= max.Y; ++y)
+                {
+                    for (int z = min.Z; z <= max.Z; ++z)
+                    {
+                        AddBlock(BlockRenderer.WaterBlockRender, new BlockObject(new Int3(x, y, z)));
+                    }
+                }
             }
         }
         public bool HasBlock(Int3 pos)
@@ -438,7 +461,7 @@ namespace BlockMarket
             {
                 var blockRender = blockRenderList[i];
 
-                if (blockRender.Type == BlockRenderer.RenderType.TEXTURE_ALPHA)
+                if (BlockRenderer.DelayRendering(blockRender.Type))
                 {
                     continue;
                 }
@@ -453,8 +476,10 @@ namespace BlockMarket
             {
                 var blockRender = blockRenderList[i];
 
-                if (blockRender.Type != BlockRenderer.RenderType.TEXTURE_ALPHA)
+                if (!BlockRenderer.DelayRendering(blockRender.Type))
+                {
                     continue;
+                }
 
                 context.InputAssembler.PrimitiveTopology = blockRender.Topology;
                 context.PixelShader.Set(resMgr.GetPSShader(blockRender.PSShaderName));
@@ -463,18 +488,8 @@ namespace BlockMarket
             }
         }
 
-        private List<BlockRenderer> blockRenderList = new List<BlockRenderer>()
-        {
-            BlockRenderer.GrassBlockRender,
-            BlockRenderer.OakWoodBlockRender,
-            BlockRenderer.PutBlockRender,
-        };
-        private List<Dictionary<Int3, BlockObject>> blockObjectsList = new List<Dictionary<Int3, BlockObject>>()
-        {
-            new Dictionary<Int3, BlockObject>(),
-            new Dictionary<Int3, BlockObject>(),
-            new Dictionary<Int3, BlockObject>(),
-        };
+        private List<BlockRenderer> blockRenderList = new List<BlockRenderer>();
+        private List<Dictionary<Int3, BlockObject>> blockObjectsList = new List<Dictionary<Int3, BlockObject>>();
 
         private int blockCount = 0;
         private bool isDirty = true;
@@ -526,6 +541,7 @@ namespace BlockMarket
                 "Mine: " + (mineBlock.HasValue ? mineBlock.Value.pos.ToString() : "null") + "\r\n" +
                 "Put: " + (putBlock.HasValue ? putBlock.Value.obj.pos.ToString() : "null") + "\r\n" +
                 "Ray: " + NumRay + "\r\n" +
+                "Water: " + (BlockRenderer.WaterBlockRender.Color) + "\r\n" +
                 "";
         }
 
@@ -578,8 +594,14 @@ namespace BlockMarket
                 {
                     for (int z = rz - range; z <= rz + range; ++z)
                     {
-                        if (blockManager.TryGetBlock(new Int3(x, y, z), out BlockObject block))
+                        var pos = new Int3(x, y, z);
+                        if (blockManager.TryGetBlock(pos, out BlockObject block))
                         {
+                            // Skip liquid block
+                            if (blockManager.HasBlockWithType(pos, BlockRenderer.WaterBlockRender))
+                            {
+                                continue;
+                            }
                             BoundingBox box = block.GetBoundingBox();
                             if (ray.Intersects(ref box, out float distance) &&
                                 distance < pickedDistance)
@@ -630,21 +652,36 @@ namespace BlockMarket
         public float Ground(Int3 pos)
         {
             pos.Z = 10;
-            while (!blockManager.HasBlock(pos) && pos.Z >= 0)
+            while ((!blockManager.HasBlock(pos) || blockManager.HasBlockWithType(pos, BlockRenderer.WaterBlockRender)) && pos.Z >= 0)
             {
                 --pos.Z;
             }
             do
             {
                 ++pos.Z;
+                if (blockManager.HasBlockWithType(pos, BlockRenderer.WaterBlockRender))
+                    break;
             } while (blockManager.HasBlock(pos));
             --pos.Z;
             return pos.Z + BlockObject.size * 0.5f;
+        }
+        public bool InLiquid(Int3 pos)
+        {
+            return blockManager.HasBlockWithType(pos, BlockRenderer.WaterBlockRender);
         }
 
         // Implementation
 
         // For DirectX
+        // liquid moving texture
+        private float debugCounter = 0.0f;
+        public void UpdateLiquidTexture()
+        {
+            debugCounter += 1.0f / 64.0f;
+            if (debugCounter > 1.0f) debugCounter -= 1.0f;
+            BlockRenderer.WaterBlockRender.ChangeColor(Vector3.One * debugCounter);
+            isDirty = true;
+        }
         public void UpdateVertexBuffer(D3DDynamicVertexBuffer vertexBuffer)
         {
             if (isDirty)

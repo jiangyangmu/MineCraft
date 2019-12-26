@@ -71,7 +71,8 @@ namespace BlockMarket
             var pixelShaderNames = new[]
             {
                 "PS_Texture_Block",
-                "PS_Texture_Alpha_Block",
+                "PS_Transparent_Block",
+                "PS_Liquid_Block",
                 "PS_Line_Block",
             };
             foreach (var shaderName in pixelShaderNames)
@@ -90,6 +91,7 @@ namespace BlockMarket
                 new string[]{ "OakWood", "Texture/OakWood.jpg" },
                 new string[]{ "OakLeaf", "Texture/OakLeaf.png" },
                 new string[]{ "Glass", "Texture/Glass.png" },
+                new string[]{ "Water", "Texture/Water.jpg" },
             };
             var imageFactory = new SharpDX.WIC.ImagingFactory2();
             foreach (var nameAndImage in textureNameAndImages)

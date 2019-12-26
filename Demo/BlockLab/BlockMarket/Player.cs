@@ -42,7 +42,12 @@ namespace BlockMarket
                     case Keys.S: moveWeight.X = -1.0f; break;
                     case Keys.A: moveWeight.Y = 1.0f; break;
                     case Keys.D: moveWeight.Y = -1.0f; break;
-                    case Keys.Space: jumpVelocity = 15.0f; break;
+                    case Keys.Space:
+                        if (isGrounded)
+                            jumpVelocity = 15.0f;
+                        else if (isInLiquid)
+                            jumpVelocity = 5.0f;
+                        break;
                     default: break;
                 }
             };
@@ -106,6 +111,7 @@ namespace BlockMarket
                     "Fwd: " + forwardDir + "\r\n" +
                     "Left: " + leftDir + "\r\n" +
                     "JumpV: " + jumpVelocity + "\r\n" +
+                    "Grounded: " + isGrounded + "\r\n" +
                     "";
             }
         }
@@ -113,22 +119,29 @@ namespace BlockMarket
         // Operations
 
         // Per frame
-        public void Update(float elapsedMS, float ground)
+        public void Update(float elapsedMS, float ground, float buoyancy)
         {
+            isInLiquid = buoyancy != 0.0f;
+            velocityDecaySpeed.X = isInLiquid ? 3.0f : 1.0f;
+
             var delta = Vector3.Zero;
-            delta += forwardDir * moveWeight.X * MOVE_SPEED * elapsedMS / 1000.0f;
-            delta += leftDir * moveWeight.Y * MOVE_SPEED * elapsedMS / 1000.0f;
+            delta += forwardDir * moveWeight.X * MOVE_SPEED * elapsedMS / velocityDecaySpeed.X / 1000.0f;
+            delta += leftDir * moveWeight.Y * MOVE_SPEED * elapsedMS / velocityDecaySpeed.X / 1000.0f;
             delta += upDir * jumpVelocity * elapsedMS / 1000.0f;
 
+            velocityDecaySpeed.Y = isInLiquid ? 3.0f : 1.0f;
             if (position.Z != ground)
             {
-                jumpVelocity += -9.8f * JUMP_SPEED * elapsedMS / 1000.0f; // gravity
+                jumpVelocity += (- gravity + buoyancy) * JUMP_SPEED * elapsedMS * velocityDecaySpeed.Y / 1000.0f;
+                if (isInLiquid)
+                    jumpVelocity = Math.Max(-3.0f, Math.Min(4.0f, jumpVelocity));
             }
 
             if (!delta.IsZero)
             {
                 position += delta;
                 position.Z = (position.Z < ground) ? ground : position.Z;
+                isGrounded = position.Z == ground;
                 DispatchEvents();
             }
         }
@@ -139,5 +152,10 @@ namespace BlockMarket
         private Vector3 forwardDir = Vector3.UnitX;
         private Vector3 leftDir = -Vector3.UnitY;
         private Vector3 upDir = Vector3.UnitZ;
+
+        private bool isGrounded = false;
+        private bool isInLiquid = false;
+        private Vector2 velocityDecaySpeed = Vector2.One;
+        private readonly float gravity = 9.8f;
     }
 }
