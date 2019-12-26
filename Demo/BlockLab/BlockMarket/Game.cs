@@ -17,57 +17,6 @@ using D2DDeviceContext = SharpDX.Direct2D1.DeviceContext;
 
 namespace BlockMarket
 {
-    class ResourceManager
-    {
-        public PixelShader GetDefaultPSShader()
-        {
-            return pixelShaderDict["PS_Texture_Block"];
-        }
-        public ShaderResourceView GetDefaultTextureSRV()
-        {
-            return textureSRVDict["Grass"];
-        }
-        public PixelShader GetPSShader(string name)
-        {
-            return pixelShaderDict[name];
-        }
-        public ShaderResourceView GetTextureSRV(string name)
-        {
-            return textureSRVDict[name];
-        }
-
-        public void LoadResources(D3DDevice device)
-        {
-            var shaderNames = new[]
-            {
-                "PS_Texture_Block",
-                "PS_Line_Block",
-            };
-            foreach (var shaderName in shaderNames)
-            {
-                var pixelShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", shaderName, "ps_4_0");
-                pixelShaderDict.Add(shaderName, new PixelShader(device, pixelShaderByteCode));
-            }
-
-            var textureNameAndImages = new string[][]
-            {
-                new string[]{ "Grass", "Texture/Grass.png" },
-                new string[]{ "OakWood", "Texture/OakWood.jpg" },
-            };
-            var imageFactory = new SharpDX.WIC.ImagingFactory2();
-            foreach (var nameAndImage in textureNameAndImages)
-            {
-                var texture = D3DTextureLoader.CreateTexture2DFromBitmap(device,
-                    D3DTextureLoader.LoadBitmap(imageFactory, nameAndImage[1]));
-                textureSRVDict.Add(nameAndImage[0], new ShaderResourceView(device, texture));
-                texture.Dispose();
-            }
-            imageFactory.Dispose();
-        }
-
-        private Dictionary<string, PixelShader> pixelShaderDict = new Dictionary<string, PixelShader>();
-        private Dictionary<string, ShaderResourceView> textureSRVDict = new Dictionary<string, ShaderResourceView>();
-    }
     class Game
     {
         public Game()
@@ -79,7 +28,7 @@ namespace BlockMarket
         public D3DDevice Device { get => device; }
         public DeviceContext Context { get => device.ImmediateContext; }
         public SwapChain SwapChain { get => swapChain; }
-        public ResourceManager ResourceManager { get => resourceManager; }
+        public D3DResourceManager ResourceManager { get => resourceManager; }
         public D3DBufferManager BufferManager { get => bufferManager; }
         // D2D Objects
         public D2DDeviceContext D2DDeviceContext { get => d2dDeviceContext; }
@@ -218,27 +167,26 @@ namespace BlockMarket
 
             var factory = new Factory1();
             // 0: Intel 1: Nvidia 2: CPU
-            var adapter = factory.Adapters1[0];
+            var adapter = factory.Adapters1[1];
 
             device = new D3DDevice(
                 adapter,
                 DeviceCreationFlags.BgraSupport // Required to work with DirectX 2D
                 );
             swapChain = new SwapChain(factory, device, swapChainDesc);
+
             bufferManager = new D3DBufferManager(device);
+            resourceManager = new D3DResourceManager(device);
 
             adapter.Dispose();
             factory.Dispose();
         }
         private void LoadResources()
         {
-            var vertexShaderByteCode = ShaderBytecode.CompileFromFile("Shader.fx", "VS", "vs_4_0");
-            vertexShader = new VertexShader(device, vertexShaderByteCode);
+            resourceManager.LoadResources();
 
-            var signature = ShaderSignature.GetInputSignature(vertexShaderByteCode);
+            var signature = ShaderSignature.GetInputSignature(resourceManager.GetDefaultVSShaderByteCode());
             inputLayout = new InputLayout(device, signature, D3DVertex.InputFormat);
-
-            resourceManager.LoadResources(device);
         }
         private void InitializeD3DPipeline(World world)
         {
@@ -264,7 +212,7 @@ namespace BlockMarket
                 0));
 
             context.VertexShader.SetConstantBuffer(0, constantBuffer);
-            context.VertexShader.Set(vertexShader);
+            context.VertexShader.Set(resourceManager.GetDefaultVSShader());
 
             context.PixelShader.SetShaderResource(0, resourceManager.GetDefaultTextureSRV());
             context.PixelShader.Set(resourceManager.GetDefaultPSShader());
@@ -277,6 +225,7 @@ namespace BlockMarket
             // Dispose D3D & D2D render target objects.
 
             renderTargetView?.Dispose();
+            depthStencilState?.Dispose();
             depthStencilView?.Dispose();
             d2dDeviceContext?.Dispose();
 
@@ -293,6 +242,31 @@ namespace BlockMarket
             renderTargetView = new RenderTargetView(Device, backBuffer);
             backBuffer.Dispose();
 
+            var depthStencilStateDesc = new DepthStencilStateDescription()
+            {
+                IsDepthEnabled = true,
+                DepthWriteMask = DepthWriteMask.All,
+                DepthComparison = Comparison.Less,
+                IsStencilEnabled = false,
+                StencilReadMask = 0xff,
+                StencilWriteMask = 0xff,
+                FrontFace = new DepthStencilOperationDescription()
+                {
+                    FailOperation = StencilOperation.Keep,
+                    DepthFailOperation = StencilOperation.Increment,
+                    PassOperation = StencilOperation.Keep,
+                    Comparison = Comparison.Always,
+                },
+                BackFace = new DepthStencilOperationDescription()
+                {
+                    FailOperation = StencilOperation.Keep,
+                    DepthFailOperation = StencilOperation.Decrement,
+                    PassOperation = StencilOperation.Keep,
+                    Comparison = Comparison.Always,
+                }
+            };
+            depthStencilState = new DepthStencilState(device, depthStencilStateDesc);
+
             var depthBuffer = new Texture2D(device, new Texture2DDescription()
             {
                 Format = Format.D32_Float_S8X24_UInt,
@@ -308,6 +282,8 @@ namespace BlockMarket
             });
             depthStencilView = new DepthStencilView(Device, depthBuffer);
 
+            device.ImmediateContext.OutputMerger.SetDepthStencilState(depthStencilState);
+            device.ImmediateContext.OutputMerger.SetBlendState(resourceManager.GetDefaultBlendState());
             device.ImmediateContext.OutputMerger.SetTargets(depthStencilView, renderTargetView);
 
             // D2D: deviceContext
@@ -342,11 +318,12 @@ namespace BlockMarket
         private readonly int SWAPCHAIN_BUFFER_COUNT = 1;
         // Shaders.
         private InputLayout inputLayout;
-        private VertexShader vertexShader;
+        // States.
+        private DepthStencilState depthStencilState;
         // Buffers.
         private D3DBufferManager bufferManager;
         // Shaders, textures.
-        private ResourceManager resourceManager = new ResourceManager();
+        private D3DResourceManager resourceManager;
         // Views.
         private RenderTargetView renderTargetView;
         private DepthStencilView depthStencilView;

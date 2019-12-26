@@ -24,7 +24,7 @@ namespace BlockMarket
             bsToolBarSelect = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "GUI/ToolBarSelect.png");
 
             var textFactory = new SharpDX.DirectWrite.Factory();
-            textFormat = new SharpDX.DirectWrite.TextFormat(textFactory, "Consolas", 30.0f);
+            textFormat = new SharpDX.DirectWrite.TextFormat(textFactory, "Consolas", 12.0f);
             textFactory.Dispose();
         }
 
@@ -72,7 +72,7 @@ namespace BlockMarket
                    X / 2 + 5, Y / 2 + 20),
                whiteBrush);
         }
-        public void DrawToolBar(int totalSlot, int selectedSlot, int itemCount)
+        public void DrawToolBar(int totalSlot, int selectedSlot, string[] itemNameList, int[] itemCountList)
         {
             int X = d2dDeviceContext.PixelSize.Width;
             int Y = d2dDeviceContext.PixelSize.Height;
@@ -99,16 +99,32 @@ namespace BlockMarket
                 );
 
             // Toolbar items
-            var itemCountStr = itemCount.ToString();
-            d2dDeviceContext.DrawText(
-                itemCountStr,
-                textFormat,
-                new SharpDX.Mathematics.Interop.RawRectangleF(
-                    X / 2 - (totalSlot * 0.5f - 0.5f) * x - 0.3f * textFormat.FontSize * itemCountStr.Length, Y - 0.85f * y,
-                    X / 2 - (totalSlot * 0.5f - 1.0f - 0.5f) * x - 0.3f * textFormat.FontSize * itemCountStr.Length, Y
-                    ),
-                whiteBrush
-                );
+            int index = 0;
+            foreach (var itemCount in itemCountList)
+            {
+                var itemNameStr = itemNameList[index].ToString();
+                d2dDeviceContext.DrawText(
+                    itemNameStr,
+                    textFormat,
+                    new SharpDX.Mathematics.Interop.RawRectangleF(
+                        X / 2 - (totalSlot * 0.5f - 0.5f - index) * x - 0.3f * textFormat.FontSize * itemNameStr.Length, Y - 0.9f * y,
+                        X / 2 - (totalSlot * 0.5f - 1.0f - 0.5f - index) * x - 0.3f * textFormat.FontSize * itemNameStr.Length, Y
+                        ),
+                    whiteBrush
+                    );
+
+                var itemCountStr = itemCount.ToString();
+                d2dDeviceContext.DrawText(
+                    itemCountStr,
+                    textFormat,
+                    new SharpDX.Mathematics.Interop.RawRectangleF(
+                        X / 2 - (totalSlot * 0.5f - 0.5f - index) * x - 0.3f * textFormat.FontSize * itemCountStr.Length, Y - 0.55f * y,
+                        X / 2 - (totalSlot * 0.5f - 1.0f - 0.5f - index) * x - 0.3f * textFormat.FontSize * itemCountStr.Length, Y
+                        ),
+                    whiteBrush
+                    );
+                ++index;
+            }
         }
 
         private D2DDeviceContext d2dDeviceContext;
@@ -121,9 +137,6 @@ namespace BlockMarket
         private Brush whiteBrush;
         private D2DBitmap bmToolBarBox;
         private D2DBitmap bmToolBarSelect;
-
-        // Inventory
-        public int InventoryBlockCount { get; set; }
     }
 
 }

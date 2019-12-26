@@ -67,8 +67,10 @@
   <ItemGroup>
     <Compile Include="Camera.cs" />
     <Compile Include="D3DBuffer.cs" />
+    <Compile Include="D3DResourceManager.cs" />
     <Compile Include="D3DTextureLoader.cs" />
     <Compile Include="D3DVertex.cs" />
+    <Compile Include="PlayerInventory.cs" />
     <Compile Include="MainForm.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -111,10 +113,22 @@
     <Content Include="Shader.fx">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Texture\Glass.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Texture\Grass.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="Texture\OakLeaf.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Texture\OakWood.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Texture\Sand.jpg">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Texture\Stone.jpg">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

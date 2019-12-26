@@ -132,10 +132,24 @@ namespace BlockMarket
 
     struct BlockRenderer
     {
-        public static BlockRenderer GrassBlockRender { get => new BlockRenderer(PrimitiveTopology.TriangleList, "PS_Texture_Block", "Grass"); }
-        public static BlockRenderer OakWoodBlockRender { get => new BlockRenderer(PrimitiveTopology.TriangleList, "PS_Texture_Block", "OakWood"); }
-        public static BlockRenderer PutBlockRender { get => new BlockRenderer(PrimitiveTopology.LineList, "PS_Line_Block", "Grass", Vector3.One); }
+        public enum RenderType
+        {
+            NULL,
+            TEXTURE,
+            TEXTURE_ALPHA,
+            LINE,
+        }
 
+        public static BlockRenderer NullRender { get => new BlockRenderer(RenderType.NULL, PrimitiveTopology.Undefined, "", ""); }
+        public static BlockRenderer PutBlockRender { get => new BlockRenderer(RenderType.LINE, PrimitiveTopology.LineList, "PS_Line_Block", "Grass", Vector3.One); }
+        public static BlockRenderer GrassBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Grass"); }
+        public static BlockRenderer SandBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Sand"); }
+        public static BlockRenderer StoneBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Stone"); }
+        public static BlockRenderer OakWoodBlockRender { get => new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "OakWood"); }
+        public static BlockRenderer OakLeafBlockRender { get => new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Texture_Alpha_Block", "OakLeaf"); }
+        public static BlockRenderer GlassBlockRender { get => new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Texture_Alpha_Block", "Glass"); }
+
+        public RenderType Type { get; }
         public PrimitiveTopology Topology { get; }
         public string PSShaderName { get; }
         public string TextureName { get; }
@@ -178,15 +192,48 @@ namespace BlockMarket
             }
         }
 
-        private BlockRenderer(PrimitiveTopology topology, string shaderName, string textureName)
+        public static ItemType ToItemType(BlockRenderer render)
         {
+            if (render.TextureName == "Grass")
+                return ItemType.GRASS_BLOCK;
+            else if (render.TextureName == "Sand")
+                return ItemType.SAND_BLOCK;
+            else if (render.TextureName == "Stone")
+                return ItemType.STONE_BLOCK;
+            else if (render.TextureName == "OakWood")
+                return ItemType.OAK_WOOD_BLOCK;
+            else if (render.TextureName == "OakLeaf")
+                return ItemType.OAK_LEAF_BLOCK;
+            else if (render.TextureName == "Glass")
+                return ItemType.GLASS_BLOCK;
+            else
+                return ItemType.GRASS_BLOCK;
+        }
+        public static BlockRenderer FromItemType(ItemType type)
+        {
+            switch (type)
+            {
+                default:
+                case ItemType.GRASS_BLOCK: return GrassBlockRender;
+                case ItemType.SAND_BLOCK: return SandBlockRender;
+                case ItemType.STONE_BLOCK: return StoneBlockRender;
+                case ItemType.OAK_WOOD_BLOCK: return OakWoodBlockRender;
+                case ItemType.OAK_LEAF_BLOCK: return OakLeafBlockRender;
+                case ItemType.GLASS_BLOCK: return GlassBlockRender;
+            }
+        }
+
+        private BlockRenderer(RenderType type, PrimitiveTopology topology, string shaderName, string textureName)
+        {
+            Type = type;
             Topology = topology;
             PSShaderName = shaderName;
             TextureName = textureName;
             Color = Vector3.One * 0.3f;
         }
-        private BlockRenderer(PrimitiveTopology topology, string shaderName, string textureName, Vector3 color)
+        private BlockRenderer(RenderType type, PrimitiveTopology topology, string shaderName, string textureName, Vector3 color)
         {
+            Type = type;
             Topology = topology;
             PSShaderName = shaderName;
             TextureName = textureName;
@@ -205,7 +252,6 @@ namespace BlockMarket
             this.render = render;
         }
     }
-
 
     class BlockManager
     {
@@ -231,7 +277,7 @@ namespace BlockMarket
             ++blockCount;
             isDirty = true;
         }
-        public void AddBlockPlane(BlockRenderer render, BlockObject centerBlock, int left, int right, int forward, int backward)
+        public void AddBlockPlane(BlockRenderer render, BlockObject centerBlock, int forward, int backward, int left, int right)
         {
             for (int r = -left; r <= right; ++r)
             {
@@ -239,6 +285,32 @@ namespace BlockMarket
                 {
                     AddBlock(render, new BlockObject(centerBlock.pos + new Int3(r, c, 0)));
                 }
+            }
+        }
+        private static Random randTreeLeafPos = new Random();
+        public void AddTree(Int3 pos, int height)
+        {
+            var level = pos;
+            for (int h = 0; h < 3; ++h)
+            {
+                AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(level), 0, 0, 0, 0);
+                level += Int3.UnitZ;
+            }
+            for (int h = 0; h < (height - 3); ++h)
+            {
+                if (h < 2)
+                    AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(level), 0, 0, 0, 0);
+
+                var half = Math.Max(0, (height - h) / 6);
+                if (height < 15)
+                    half = Math.Max(half, (height - h) / 2);
+                for (int c = 0; c < half * half * 3; ++c)
+                {
+                    var xy = randTreeLeafPos.NextPoint(new Point(-half, -half), new Point(half, half));
+                    var shift = new Int3(xy.X, xy.Y, 0);
+                    AddBlockPlane(BlockRenderer.OakLeafBlockRender, new BlockObject(level + shift), 0, 0, 0, 0);
+                }
+                level += Int3.UnitZ;
             }
         }
         public bool HasBlock(Int3 pos)
@@ -267,6 +339,19 @@ namespace BlockMarket
                     return true;
             }
             block = new BlockObject(Int3.Zero);
+            return false;
+        }
+        public bool TryGetBlockType(Int3 pos, out BlockRenderer render)
+        {
+            for (int i = 0; i < blockObjectsList.Count; ++i)
+            {
+                if (blockObjectsList[i].ContainsKey(pos))
+                {
+                    render = blockRenderList[i];
+                    return true;
+                }
+            }
+            render = BlockRenderer.NullRender;
             return false;
         }
         public bool RemoveBlock(BlockObject block)
@@ -334,19 +419,47 @@ namespace BlockMarket
             }
             isDirty = false;
         }
-        public void Render(DeviceContext context, ResourceManager resMgr, ref int offset)
+        public void Render(DeviceContext context, D3DResourceManager resMgr, ref int offset)
         {
+            context.OutputMerger.BlendState = resMgr.GetDefaultBlendState();
+
+            var countAndOffset = new List<Tuple<int, int>>(blockRenderList.Count);
             for (int i = 0; i < blockRenderList.Count; ++i)
             {
                 var blockRender = blockRenderList[i];
                 var blockCount = blockObjectsList[i].Count;
                 int vertexCount = blockCount * blockRender.GetBlockVertexCount();
 
+                countAndOffset.Add(new Tuple<int, int>(vertexCount, offset));
+                offset += vertexCount;
+            }
+
+            for (int i = 0; i < blockRenderList.Count; ++i)
+            {
+                var blockRender = blockRenderList[i];
+
+                if (blockRender.Type == BlockRenderer.RenderType.TEXTURE_ALPHA)
+                {
+                    continue;
+                }
+
                 context.InputAssembler.PrimitiveTopology = blockRender.Topology;
                 context.PixelShader.Set(resMgr.GetPSShader(blockRender.PSShaderName));
                 context.PixelShader.SetShaderResource(0, resMgr.GetTextureSRV(blockRender.TextureName));
-                context.Draw(vertexCount, offset);
-                offset += vertexCount;
+                context.Draw(countAndOffset[i].Item1, countAndOffset[i].Item2);
+            }
+            context.OutputMerger.BlendState = resMgr.GetBlendState("Transparent");
+            for (int i = 0; i < blockRenderList.Count; ++i)
+            {
+                var blockRender = blockRenderList[i];
+
+                if (blockRender.Type != BlockRenderer.RenderType.TEXTURE_ALPHA)
+                    continue;
+
+                context.InputAssembler.PrimitiveTopology = blockRender.Topology;
+                context.PixelShader.Set(resMgr.GetPSShader(blockRender.PSShaderName));
+                context.PixelShader.SetShaderResource(0, resMgr.GetTextureSRV(blockRender.TextureName));
+                context.Draw(countAndOffset[i].Item1, countAndOffset[i].Item2);
             }
         }
 
@@ -421,24 +534,27 @@ namespace BlockMarket
         // block operation -> BlockManager
         public BlockManager BlockManager { get => blockManager; }
         // block picking, mine, put
-        public bool DoMineBlock()
+        public bool DoMineBlock(out ItemType type)
         {
             if (mineBlock.HasValue)
             {
+                blockManager.TryGetBlockType(mineBlock.Value.pos, out BlockRenderer render);
+                type = BlockRenderer.ToItemType(render);
                 blockManager.RemoveBlock(mineBlock.Value);
                 mineBlock = null;
                 return true;
             }
             else
             {
+                type = ItemType.GRASS_BLOCK;
                 return false;
             }
         }
-        public bool DoPutBlock()
+        public bool DoPutBlock(ItemType type)
         {
             if (putBlock.HasValue)
             {
-                blockManager.AddBlock(BlockRenderer.GrassBlockRender, putBlock.Value.obj);
+                blockManager.AddBlock(BlockRenderer.FromItemType(type), putBlock.Value.obj);
                 putBlock = null;
                 return true;
             }
@@ -538,7 +654,7 @@ namespace BlockMarket
                 vertexBuffer.Reset(GetVertices());
             }
         }
-        public void Render(DeviceContext context, ResourceManager resMgr)
+        public void Render(DeviceContext context, D3DResourceManager resMgr)
         {
             int offset = 0;
 

@@ -65,16 +65,19 @@ namespace BlockMarket
         static void Main()
         {
             var world = new World();
-            world.BlockManager.AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(world.Origin + world.Up * 2), 3, 3, 3, 3);
-            world.BlockManager.AddBlockPlane(BlockRenderer.GrassBlockRender, new BlockObject(world.Origin + world.Up * 2), 6, 6, 6, 6);
-            world.BlockManager.AddBlockPlane(BlockRenderer.GrassBlockRender, new BlockObject(world.Origin + world.Up), 8, 8, 8, 8);
             world.BlockManager.AddBlockPlane(BlockRenderer.GrassBlockRender, new BlockObject(world.Origin), 10, 10, 10, 10);
+            world.BlockManager.AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 0), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(BlockRenderer.OakLeafBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 1), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(BlockRenderer.GlassBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 2), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(BlockRenderer.SandBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 3), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(BlockRenderer.StoneBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 4), 0, 0, 5, 5);
+            world.BlockManager.AddTree(world.Origin + world.Right * 8, 7);
             world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
             world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
             world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
 
             var camera = new Camera(
-                pos: world.OriginF,
+                pos: world.OriginF + 5.0f * world.UpF + 15.0f * world.ForwardF * 15.0f * world.RightF,
                 up: world.UpF
                 );
 
@@ -83,7 +86,8 @@ namespace BlockMarket
 
             camera.AspectRatio = game.MainWindow.ClientSize.Width / (float)game.MainWindow.ClientSize.Height;
 
-            var player = new PlayerController(world.OriginF + 5.0f * world.UpF);
+            var player = new PlayerController(camera.Pos);
+            var inventory = new PlayerInventory();
 
             bool windowResized = false;
             var gui = new GUI();
@@ -104,6 +108,22 @@ namespace BlockMarket
                         camera.AspectRatio = mainWnd.ClientSize.Width / (float)mainWnd.ClientSize.Height;
 
                         windowResized = true;
+                    };
+                    mainWnd.KeyDown += (sender, e) =>
+                    {
+                        switch (e.KeyCode)
+                        {
+                            case Keys.D1: inventory.SelectedItemIndex = 0; break;
+                            case Keys.D2: inventory.SelectedItemIndex = 1; break;
+                            case Keys.D3: inventory.SelectedItemIndex = 2; break;
+                            case Keys.D4: inventory.SelectedItemIndex = 3; break;
+                            case Keys.D5: inventory.SelectedItemIndex = 4; break;
+                            case Keys.D6: inventory.SelectedItemIndex = 5; break;
+                            case Keys.D7: inventory.SelectedItemIndex = 6; break;
+                            case Keys.D8: inventory.SelectedItemIndex = 7; break;
+                            case Keys.D9: inventory.SelectedItemIndex = 8; break;
+                            default: break;
+                        }
                     };
                 },
                 GameLogic: (float elapsedTimeMS) =>
@@ -131,14 +151,14 @@ namespace BlockMarket
                     else if (gameState.Mine)
                     {
                         gameState.Mine = false;
-                        if (world.DoMineBlock())
-                            ++gui.InventoryBlockCount;
+                        if (world.DoMineBlock(out ItemType type))
+                            inventory.AddItem(type);
                     }
                     else if (gameState.Put)
                     {
                         gameState.Put = false;
-                        if (gui.InventoryBlockCount > 0 && world.DoPutBlock())
-                            --gui.InventoryBlockCount;
+                        if (inventory.SelectedCount > 0 && world.DoPutBlock(inventory.SelectedItem))
+                            inventory.RemoveItem(inventory.SelectedItem);
                     }
 
                     // Mark picked block as red.
@@ -172,7 +192,11 @@ namespace BlockMarket
                     game.D2DDeviceContext.BeginDraw();
 
                     gui.DrawAimCross();
-                    gui.DrawToolBar(11, 0, gui.InventoryBlockCount);
+                    gui.DrawToolBar(
+                        11,
+                        inventory.SelectedItemIndex,
+                        inventory.GetItemNameList(),
+                        inventory.GetItemCountList());
 
                     game.D2DDeviceContext.EndDraw();
                 }

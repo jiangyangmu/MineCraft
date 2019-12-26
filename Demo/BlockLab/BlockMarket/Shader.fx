@@ -33,9 +33,21 @@ float4 PS_Texture_Block(PS_IN input) : SV_Target
 {
     float4 texColor;
     texColor = gTexture.Sample(gSampleType, input.tex);
-    return 0.5f * texColor + 0.5f * float4(input.col, 1.0f);
+    return texColor * 0.5f + float4(input.col, 0.1f) * 0.5f;
 }
+
+float4 PS_Texture_Alpha_Block(PS_IN input) : SV_Target
+{
+    float4 texColor;
+    texColor = gTexture.Sample(gSampleType, input.tex);
+    if (input.col.x != 0.0f && input.col.y == 0.0f && input.col.z == 0.0f)
+    {
+        texColor.xyz = texColor.xyz * 0.5f + input.col * 0.5f;
+    }
+    return texColor;
+}
+
 float4 PS_Line_Block(PS_IN input) : SV_Target
 {
-    return float4(input.col, 1.0f);
+    return float4(input.col, 0.5f);
 }
