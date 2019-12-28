@@ -207,7 +207,7 @@ namespace BlockMarket
         public Matrix ProjMatrix
         {
             // Matrix.OrthoLH(camera.AspectRatio * 10, 10, 0.1f, 10.0f);
-            get => Matrix.PerspectiveFovLH((float)Math.PI / 4.0f, AspectRatio, 0.1f, 100.0f);
+            get => Matrix.PerspectiveFovLH((float)Math.PI / 4.0f, AspectRatio, 0.1f, 1000.0f);
         }
     }
 

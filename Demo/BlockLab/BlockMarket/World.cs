@@ -9,29 +9,61 @@ using SharpDX.Mathematics;
 
 namespace BlockMarket
 {
-    struct BlockObject : IEquatable<BlockObject>
+    enum BlockType
+    {
+        PUT = 1,
+        GRASS = 2,
+        SAND = 3,
+        STONE = 4,
+        OAK_WOOD = 5,
+        OAK_LEAF = 6,
+        GLASS = 7,
+        WATER = 8,
+    }
+
+    class BlockTypeUtil
+    {
+        public static BlockType FromItemType(ItemType itemType)
+        {
+            BlockType type;
+            switch (itemType)
+            {
+                case ItemType.GRASS_BLOCK: type = BlockType.GLASS; break;
+                case ItemType.SAND_BLOCK: type = BlockType.SAND; break;
+                case ItemType.STONE_BLOCK: type = BlockType.STONE; break;
+                case ItemType.OAK_WOOD_BLOCK: type = BlockType.OAK_WOOD; break;
+                case ItemType.OAK_LEAF_BLOCK: type = BlockType.OAK_LEAF; break;
+                case ItemType.GLASS_BLOCK: type = BlockType.GLASS; break;
+                default: throw new ArgumentException("Can't convert ItemType " + itemType + " to BlockType.");
+            }
+            return type;
+        }
+    }
+
+    // Block pos, size, transform, physics
+    struct BlockBody : IEquatable<BlockBody>
     {
         public static readonly int size = 1;
         public Int3 pos;
 
-        public BlockObject(Int3 pos)
+        public BlockBody(Int3 pos)
         {
             this.pos = pos;
         }
 
-        public static bool operator ==(BlockObject x, BlockObject y)
+        public static bool operator ==(BlockBody x, BlockBody y)
         {
             return x.Equals(y);
         }
-        public static bool operator !=(BlockObject x, BlockObject y)
+        public static bool operator !=(BlockBody x, BlockBody y)
         {
             return !x.Equals(y);
         }
-        public override bool Equals(object obj)
+        public override bool Equals(object body)
         {
-            return obj is BlockObject && Equals((BlockObject)obj);
+            return body is BlockBody && Equals((BlockBody)body);
         }
-        public bool Equals(BlockObject other)
+        public bool Equals(BlockBody other)
         {
             return pos.Equals(other.pos);
         }
@@ -47,7 +79,7 @@ namespace BlockMarket
                new Vector3(pos.X - half_size, pos.Y - half_size, pos.Z - half_size),
                new Vector3(pos.X + half_size, pos.Y + half_size, pos.Z + half_size));
         }
-        public BlockObject? GetPutBlock(Ray ray)
+        public BlockBody? GetPutBlock(Ray ray)
         {
             float half_size = size * 0.5f;
             var v = new[]
@@ -123,144 +155,74 @@ namespace BlockMarket
                 if (ray.Intersects(ref v[i], ref v[i + 1], ref v[i + 2]) &&
                     Vector3.Dot(ray.Direction, norms[i / 6]) <= 0.0f)
                 {
-                    return new BlockObject() { pos = slots[i / 6] };
+                    return new BlockBody() { pos = slots[i / 6] };
                 }
             }
             return null;
         }
     }
 
-    class BlockRenderer
+    struct Block
     {
-        public enum RenderType
+        public BlockType type; // rendering
+        public Int3 pos; // physics
+
+        public Block(BlockType type, Int3 pos)
         {
-            NULL,
-            TEXTURE,
-            TEXTURE_ALPHA,
-            LIQUID,
-            LINE,
+            this.type = type;
+            this.pos = pos;
         }
 
-        public static BlockRenderer NullRender = new BlockRenderer(RenderType.NULL, PrimitiveTopology.Undefined, "", "");
-        public static BlockRenderer PutBlockRender = new BlockRenderer(RenderType.LINE, PrimitiveTopology.LineList, "PS_Line_Block", "Grass", Vector3.One);
-        public static BlockRenderer GrassBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Grass");
-        public static BlockRenderer SandBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Sand");
-        public static BlockRenderer StoneBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "Stone");
-        public static BlockRenderer OakWoodBlockRender = new BlockRenderer(RenderType.TEXTURE, PrimitiveTopology.TriangleList, "PS_Texture_Block", "OakWood");
-        public static BlockRenderer OakLeafBlockRender = new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Transparent_Block", "OakLeaf");
-        public static BlockRenderer GlassBlockRender = new BlockRenderer(RenderType.TEXTURE_ALPHA, PrimitiveTopology.TriangleList, "PS_Transparent_Block", "Glass");
-        public static BlockRenderer WaterBlockRender = new BlockRenderer(RenderType.LIQUID, PrimitiveTopology.TriangleList, "PS_Liquid_Block", "Water");
-        public static bool DelayRendering(RenderType type)
-        {
-            return type == RenderType.TEXTURE_ALPHA || type == RenderType.LIQUID;
-        }
+        public BlockRenderer Render { get => BlockRenderer.RenderList[(int)type]; }
+        public BlockBody Body { get => new BlockBody(pos); }
 
-        public RenderType Type { get; }
-        public PrimitiveTopology Topology { get; }
-        public string PSShaderName { get; }
-        public string TextureName { get; }
-        public Vector3 Color { get; private set; }
-
-        public int GetBlockVertexCount()
+        public static Block Put(Int3 pos)
         {
-            return D3DVertex.GetBlockVertexCount(Topology);
+            return new Block(BlockType.PUT, pos);
         }
-        public void FillBlockVertices(ref D3DVertex[] v, ref int offset, BlockObject block)
+        public static Block Grass(Int3 pos)
         {
-            var blockVertices = D3DVertex.GetBlockVertices(
-                Topology,
-                Vector3.UnitX,
-                Vector3.UnitY,
-                Vector3.UnitZ,
-                (Vector3)block.pos,
-                Color,
-                BlockObject.size
-                );
-            foreach (var vertex in blockVertices)
-            {
-                v[offset++] = vertex;
-            }
+            return new Block(BlockType.GRASS, pos);
         }
-        public void FillBlockVertices(ref D3DVertex[] v, ref int offset, BlockObject block, Vector3 color)
+        public static Block Sand(Int3 pos)
         {
-            var blockVertices = D3DVertex.GetBlockVertices(
-                Topology,
-                Vector3.UnitX,
-                Vector3.UnitY,
-                Vector3.UnitZ,
-                (Vector3)block.pos,
-                color,
-                BlockObject.size
-                );
-            foreach (var vertex in blockVertices)
-            {
-                v[offset++] = vertex;
-            }
+            return new Block(BlockType.SAND, pos);
         }
-
-        public void ChangeColor(Vector3 color)
+        public static Block Stone(Int3 pos)
         {
-            Color = color;
+            return new Block(BlockType.STONE, pos);
         }
-        public static ItemType ToItemType(BlockRenderer render)
+        public static Block OakWood(Int3 pos)
         {
-            if (render.TextureName == "Grass")
-                return ItemType.GRASS_BLOCK;
-            else if (render.TextureName == "Sand")
-                return ItemType.SAND_BLOCK;
-            else if (render.TextureName == "Stone")
-                return ItemType.STONE_BLOCK;
-            else if (render.TextureName == "OakWood")
-                return ItemType.OAK_WOOD_BLOCK;
-            else if (render.TextureName == "OakLeaf")
-                return ItemType.OAK_LEAF_BLOCK;
-            else if (render.TextureName == "Glass")
-                return ItemType.GLASS_BLOCK;
-            else
-                return ItemType.GRASS_BLOCK;
+            return new Block(BlockType.OAK_WOOD, pos);
         }
-        public static BlockRenderer FromItemType(ItemType type)
+        public static Block OakLeaf(Int3 pos)
         {
-            switch (type)
-            {
-                default:
-                case ItemType.GRASS_BLOCK: return GrassBlockRender;
-                case ItemType.SAND_BLOCK: return SandBlockRender;
-                case ItemType.STONE_BLOCK: return StoneBlockRender;
-                case ItemType.OAK_WOOD_BLOCK: return OakWoodBlockRender;
-                case ItemType.OAK_LEAF_BLOCK: return OakLeafBlockRender;
-                case ItemType.GLASS_BLOCK: return GlassBlockRender;
-            }
+            return new Block(BlockType.OAK_LEAF, pos);
         }
-
-        private BlockRenderer(RenderType type, PrimitiveTopology topology, string shaderName, string textureName)
+        public static Block Glass(Int3 pos)
         {
-            Type = type;
-            Topology = topology;
-            PSShaderName = shaderName;
-            TextureName = textureName;
-            Color = Vector3.One * 0.3f;
+            return new Block(BlockType.GLASS, (pos));
         }
-        private BlockRenderer(RenderType type, PrimitiveTopology topology, string shaderName, string textureName, Vector3 color)
+        public static Block Water(Int3 pos)
         {
-            Type = type;
-            Topology = topology;
-            PSShaderName = shaderName;
-            TextureName = textureName;
-            Color = color;
+            return new Block(BlockType.WATER, (pos));
         }
     }
 
-    struct BlockInfo
+    // Tree, Water
+    class GenerativeBlock
     {
-        public BlockObject obj;
-        public BlockRenderer render;
-
-        public BlockInfo(BlockRenderer render, BlockObject obj)
+        enum Type
         {
-            this.obj = obj;
-            this.render = render;
+            TREE,
+            WATER,
         }
+    }
+    // TNT
+    class DestructiveBlock
+    {
+
     }
 
     class BlockManager
@@ -269,31 +231,33 @@ namespace BlockMarket
         public int BlockCount { get => blockCount; }
 
         // Position based
-        public void AddBlock(BlockRenderer render, BlockObject block)
+        public void AddBlock(Block info)
         {
-            if (HasBlock(block))
+            if (HasBlock(info.pos))
                 return;
 
-            var index = blockRenderList.IndexOf(render);
+            var index = blockRenderList.IndexOf(info.Render);
             if (index == -1)
             {
-                blockRenderList.Add(render);
-                blockObjectsList.Add(new Dictionary<Int3, BlockObject>());
+                blockRenderList.Add(info.Render);
+                blockObjectsList.Add(new Dictionary<Int3, BlockBody>());
                 index = blockRenderList.Count - 1;
             }
 
-            blockObjectsList[index].Add(block.pos, block);
+            blockObjectsList[index].Add(info.pos, info.Body);
 
             ++blockCount;
             isDirty = true;
         }
-        public void AddBlockPlane(BlockRenderer render, BlockObject centerBlock, int forward, int backward, int left, int right)
+        public void AddBlockPlane(Block info, int forward, int backward, int left, int right)
         {
+            var pos = info.pos;
             for (int r = -left; r <= right; ++r)
             {
                 for (int c = -backward; c <= forward; ++c)
                 {
-                    AddBlock(render, new BlockObject(centerBlock.pos + new Int3(r, c, 0)));
+                    info.pos = pos + new Int3(r, c, 0);
+                    AddBlock(info);
                 }
             }
         }
@@ -303,13 +267,13 @@ namespace BlockMarket
             var level = pos;
             for (int h = 0; h < 3; ++h)
             {
-                AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(level), 0, 0, 0, 0);
+                AddBlockPlane(Block.OakWood(level), 0, 0, 0, 0);
                 level += Int3.UnitZ;
             }
             for (int h = 0; h < (height - 3); ++h)
             {
                 if (h < 2)
-                    AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(level), 0, 0, 0, 0);
+                    AddBlockPlane(Block.OakWood(level), 0, 0, 0, 0);
 
                 var half = Math.Max(0, (height - h) / 6);
                 if (height < 15)
@@ -318,7 +282,7 @@ namespace BlockMarket
                 {
                     var xy = randTreeLeafPos.NextPoint(new Point(-half, -half), new Point(half, half));
                     var shift = new Int3(xy.X, xy.Y, 0);
-                    AddBlockPlane(BlockRenderer.OakLeafBlockRender, new BlockObject(level + shift), 0, 0, 0, 0);
+                    AddBlockPlane(Block.OakLeaf(level + shift), 0, 0, 0, 0);
                 }
                 level += Int3.UnitZ;
             }
@@ -331,7 +295,7 @@ namespace BlockMarket
                 {
                     for (int z = min.Z; z <= max.Z; ++z)
                     {
-                        AddBlock(BlockRenderer.WaterBlockRender, new BlockObject(new Int3(x, y, z)));
+                        AddBlock(Block.Water(new Int3(x, y, z)));
                     }
                 }
             }
@@ -345,7 +309,7 @@ namespace BlockMarket
             }
             return false;
         }
-        public bool HasBlock(BlockObject block)
+        public bool HasBlock(BlockBody block)
         {
             return HasBlock(block.pos);
         }
@@ -354,14 +318,14 @@ namespace BlockMarket
             int index = blockRenderList.IndexOf(render);
             return index != -1 && blockObjectsList[index].ContainsKey(pos);
         }
-        public bool TryGetBlock(Int3 pos, out BlockObject block)
+        public bool TryGetBlock(Int3 pos, out BlockBody block)
         {
             foreach (var blockDict in blockObjectsList)
             {
                 if (blockDict.TryGetValue(pos, out block))
                     return true;
             }
-            block = new BlockObject(Int3.Zero);
+            block = new BlockBody(Int3.Zero);
             return false;
         }
         public bool TryGetBlockType(Int3 pos, out BlockRenderer render)
@@ -377,7 +341,7 @@ namespace BlockMarket
             render = BlockRenderer.NullRender;
             return false;
         }
-        public bool RemoveBlock(BlockObject block)
+        public bool RemoveBlock(BlockBody block)
         {
             foreach (var blockDict in blockObjectsList)
             {
@@ -428,7 +392,7 @@ namespace BlockMarket
             }
             isDirty = false;
         }
-        public void FillVertices(ref D3DVertex[] v, ref int offset, Func<BlockObject, Vector3, Vector3> colorMutator)
+        public void FillVertices(ref D3DVertex[] v, ref int offset, Func<BlockBody, Vector3, Vector3> colorMutator)
         {
             for (int i = 0; i < blockRenderList.Count; ++i)
             {
@@ -489,7 +453,7 @@ namespace BlockMarket
         }
 
         private List<BlockRenderer> blockRenderList = new List<BlockRenderer>();
-        private List<Dictionary<Int3, BlockObject>> blockObjectsList = new List<Dictionary<Int3, BlockObject>>();
+        private List<Dictionary<Int3, BlockBody>> blockObjectsList = new List<Dictionary<Int3, BlockBody>>();
 
         private int blockCount = 0;
         private bool isDirty = true;
@@ -539,7 +503,7 @@ namespace BlockMarket
                 "Vertex: " + blockManager.GetTotalVertexCount() + "\r\n" +
                 "Block: " + NumBlock + "\r\n" +
                 "Mine: " + (mineBlock.HasValue ? mineBlock.Value.pos.ToString() : "null") + "\r\n" +
-                "Put: " + (putBlock.HasValue ? putBlock.Value.obj.pos.ToString() : "null") + "\r\n" +
+                "Put: " + (putBlock.HasValue ? putBlock.Value.pos.ToString() : "null") + "\r\n" +
                 "Ray: " + NumRay + "\r\n" +
                 "Water: " + (BlockRenderer.WaterBlockRender.Color) + "\r\n" +
                 "";
@@ -570,7 +534,7 @@ namespace BlockMarket
         {
             if (putBlock.HasValue)
             {
-                blockManager.AddBlock(BlockRenderer.FromItemType(type), putBlock.Value.obj);
+                blockManager.AddBlock(new Block(BlockTypeUtil.FromItemType(type), putBlock.Value.pos));
                 putBlock = null;
                 return true;
             }
@@ -581,7 +545,7 @@ namespace BlockMarket
         }
         public void PickTest(Ray ray, int range)
         {
-            BlockObject? pickedBlock = null;
+            BlockBody? pickedBlock = null;
             float pickedDistance = float.MaxValue;
 
             int rx = (int)ray.Position.X;
@@ -595,7 +559,7 @@ namespace BlockMarket
                     for (int z = rz - range; z <= rz + range; ++z)
                     {
                         var pos = new Int3(x, y, z);
-                        if (blockManager.TryGetBlock(pos, out BlockObject block))
+                        if (blockManager.TryGetBlock(pos, out BlockBody block))
                         {
                             // Skip liquid block
                             if (blockManager.HasBlockWithType(pos, BlockRenderer.WaterBlockRender))
@@ -625,9 +589,9 @@ namespace BlockMarket
                 var put = mineBlock.Value.GetPutBlock(ray);
                 if (put.HasValue)
                 {
-                    if (putBlock == null || putBlock.Value.obj != put)
+                    if (putBlock == null || putBlock.Value.Body != put)
                     {
-                        putBlock = new BlockInfo(BlockRenderer.PutBlockRender, put.Value);
+                        putBlock = new Block(BlockType.PUT, put.Value.pos);
                         isDirty = true;
                     }
                 }
@@ -663,7 +627,7 @@ namespace BlockMarket
                     break;
             } while (blockManager.HasBlock(pos));
             --pos.Z;
-            return pos.Z + BlockObject.size * 0.5f;
+            return pos.Z + BlockBody.size * 0.5f;
         }
         public bool InLiquid(Int3 pos)
         {
@@ -703,8 +667,8 @@ namespace BlockMarket
             blockManager.Render(context, resMgr, ref offset);
             if (putBlock.HasValue)
             {
-                putBlockMgr.RemoveBlocksByType(putBlock.Value.render);
-                putBlockMgr.AddBlock(putBlock.Value.render, putBlock.Value.obj);
+                putBlockMgr.RemoveBlocksByType(putBlock.Value.Render);
+                putBlockMgr.AddBlock(putBlock.Value);
                 putBlockMgr.Render(context, resMgr, ref offset);
             }
         }
@@ -714,7 +678,7 @@ namespace BlockMarket
             var vertices = new D3DVertex[
                 rayCollection.Count * 2 + // ray
                 blockManager.GetTotalVertexCount() + // block + mine block
-                (putBlock.HasValue ? putBlock.Value.render.GetBlockVertexCount() : 0) + // put block
+                (putBlock.HasValue ? putBlock.Value.Render.GetBlockVertexCount() : 0) + // put block
                 0];
 
             int offset = 0;
@@ -739,7 +703,7 @@ namespace BlockMarket
                 blockManager.FillVertices(ref vertices, ref offset);
             }
             if (putBlock.HasValue)
-                putBlock.Value.render.FillBlockVertices(ref vertices, ref offset, putBlock.Value.obj);
+                putBlock.Value.Render.FillBlockVertices(ref vertices, ref offset, putBlock.Value.Body);
 
             vertexCount = vertices.Length;
 
@@ -750,9 +714,9 @@ namespace BlockMarket
         private int dirtyFrame = 0;
 
         private BlockManager blockManager;
-        private BlockObject? mineBlock;
+        private BlockBody? mineBlock;
         private BlockManager putBlockMgr; // render put block
-        private BlockInfo? putBlock;
+        private Block? putBlock;
 
         private List<Tuple<Ray, Vector3>> rayCollection;
         private int vertexCount;

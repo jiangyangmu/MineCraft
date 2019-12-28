@@ -97,6 +97,12 @@ namespace BlockMarket
             // Start game loop
             var timer = new Stopwatch();
             timer.Start();
+            var perfTimer = new Stopwatch();
+            long perfPrepareCounter = 0;
+            long perfLogicCounter = 0;
+            long perfRenderCounter = 0;
+            long perfFrameCounter = 1;
+            perfTimer.Restart();
             RenderLoop.Run(mainWnd, () =>
             {
                 // Before enter this function, process user input from mainWnd.
@@ -107,22 +113,51 @@ namespace BlockMarket
                     windowEvent = WindowEvent.None;
                 }
 
+                perfPrepareCounter += perfTimer.ElapsedTicks;
+
                 var elapsedTimeMS = timer.ElapsedMilliseconds;
                 timer.Restart();
-                
+
                 // Change game state.
+
+                perfTimer.Restart();
 
                 GameLogic(elapsedTimeMS);
 
+                perfLogicCounter += perfTimer.ElapsedTicks;
+
                 // Render.
+
+                perfTimer.Restart();
 
                 ClearScreen();
                 RenderLogic(out string debugText);
+                PresentNextFrame();
+
+                perfRenderCounter += perfTimer.ElapsedTicks;
+                ++perfFrameCounter;
+
+                if (perfFrameCounter > 5000)
+                {
+                    perfFrameCounter = 0;
+                    perfPrepareCounter = 0;
+                    perfRenderCounter = 0;
+                    perfLogicCounter = 0;
+                }
                 mainWnd.debugText.Text =
                     debugText +
-                    "Mouse Captured: " + mainWnd.Capture + "\r\n" +
+                    //"========= Misc =========" + "\r\n" +
+                    //"Mouse Captured: " + mainWnd.Capture + "\r\n" +
+                    "========= Performance =========" + "\r\n" +
+                    "Frame:" + perfFrameCounter + "\r\n" +
+                    //"Prep   Tick:" + perfPrepareCounter + "\r\n" +
+                    //"Logic  Tick:" + perfLogicCounter + "\r\n" +
+                    //"Render Tick:" + perfRenderCounter + "\r\n" +
+                    "Prep   Time (ms):" + (perfPrepareCounter * 1000.0f / Stopwatch.Frequency / perfFrameCounter).ToString("0.00") + "\r\n" +
+                    "Logic  Time (ms):" + (perfLogicCounter * 1000.0f / Stopwatch.Frequency / perfFrameCounter).ToString("0.00") + "\r\n" +
+                    "Render Time (ms):" + (perfRenderCounter * 1000.0f / Stopwatch.Frequency / perfFrameCounter).ToString("0.00") + "\r\n" +
                     "";
-                PresentNextFrame();
+                perfTimer.Restart();
             });
         }
 

@@ -62,17 +62,58 @@ namespace BlockMarket
             private float totalTimeMS = 0.0f;
         }
 
+        static void HugeRandomCube(World world, BlockType type = BlockType.PUT, int size = 256, int maxBlockCount = 1000000)
+        {
+            var rand = new Random();
+            var half = size / 2;
+            for (int i = 0; i < maxBlockCount; ++i)
+            {
+                var x = (int)(rand.NextLong() % size - half);
+                var y = (int)(rand.NextLong() % size - half);
+                var z = (int)(rand.NextLong() % size - half);
+                world.BlockManager.AddBlock(new Block(type, new Int3(x, y, z)));
+            }
+        }
+        static void HugeBox(World world, BlockType type = BlockType.PUT, int size = 256, int maxBlockCount = 1000000)
+        {
+            int half = size / 2;
+            for (int x = -half; x <= half; ++x)
+            {
+                for (int y = -half; y <= half; ++y)
+                {
+                    for (int z = -half; z <= half; ++z)
+                    {
+                        if (Math.Abs(x) >= half ||
+                            Math.Abs(y) >= half ||
+                            Math.Abs(z) >= half)
+                        {
+                            world.BlockManager.AddBlock(new Block(type, new Int3(x, y, z)));
+                            --maxBlockCount;
+                        }
+                        if (maxBlockCount <= 0) break;
+                    }
+                    if (maxBlockCount <= 0) break;
+                }
+                if (maxBlockCount <= 0) break;
+            }
+        }
+        static void BlockShow(World world)
+        {
+            world.BlockManager.AddBlockPlane(Block.Grass(world.Origin), 10, 10, 10, 10);
+            world.BlockManager.AddBlockPlane(Block.OakWood(world.Origin + world.Up + world.Right * 0), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(Block.OakLeaf(world.Origin + world.Up + world.Right * 1), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(Block.Glass(world.Origin + world.Up + world.Right * 2), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(Block.Sand(world.Origin + world.Up + world.Right * 3), 0, 0, 5, 5);
+            world.BlockManager.AddBlockPlane(Block.Stone(world.Origin + world.Up + world.Right * 4), 0, 0, 5, 5);
+            world.BlockManager.AddTree(world.Origin + world.Right * 8, 7);
+            world.BlockManager.AddWaterPool(world.Origin + world.Right * -8 + world.Forward * -3 + world.Up, world.Origin + world.Right * -5 + world.Forward * 3 + world.Up * 4);
+        }
         static void Main()
         {
             var world = new World();
-            world.BlockManager.AddBlockPlane(BlockRenderer.GrassBlockRender, new BlockObject(world.Origin), 10, 10, 10, 10);
-            world.BlockManager.AddBlockPlane(BlockRenderer.OakWoodBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 0), 0, 0, 5, 5);
-            world.BlockManager.AddBlockPlane(BlockRenderer.OakLeafBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 1), 0, 0, 5, 5);
-            world.BlockManager.AddBlockPlane(BlockRenderer.GlassBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 2), 0, 0, 5, 5);
-            world.BlockManager.AddBlockPlane(BlockRenderer.SandBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 3), 0, 0, 5, 5);
-            world.BlockManager.AddBlockPlane(BlockRenderer.StoneBlockRender, new BlockObject(world.Origin + world.Up + world.Right * 4), 0, 0, 5, 5);
-            world.BlockManager.AddTree(world.Origin + world.Right * 8, 7);
-            world.BlockManager.AddWaterPool(world.Origin + world.Right * -8 + world.Forward * -3 + world.Up, world.Origin + world.Right * -5 + world.Forward * 3 + world.Up * 4);
+            HugeRandomCube(world, BlockType.GRASS, 128, 1000000);
+            //HugeBox(world, BlockType.GRASS, 256, 1000000);
+            //BlockShow(world);
             world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
             world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
             world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
@@ -96,6 +137,7 @@ namespace BlockMarket
             gui.Reset(game.D2DDeviceContext);
 
             var gameState = new GameState();
+            
             var deltaMS = 0.0f;
             game.Start(
                 ControlLogic: (Control mainWnd) =>
@@ -130,8 +172,8 @@ namespace BlockMarket
                 },
                 GameLogic: (float elapsedTimeMS) =>
                 {
-                    int ms = (int)(1000.0f * 1.7 / 60.0f - elapsedTimeMS);
-                    Thread.Sleep(ms > 0 ? ms : 0);
+                    //int ms = (int)(1000.0f * 1.7 / 60.0f - elapsedTimeMS);
+                    //Thread.Sleep(ms > 0 ? ms : 0);
 
                     // Update player state
 
@@ -171,7 +213,7 @@ namespace BlockMarket
                     }
 
                     // Mark picked block as red.
-                    world.PickTest(new Ray(camera.Pos, camera.Orientation), 5);
+                    // world.PickTest(new Ray(camera.Pos, camera.Orientation), 5);
 
                     deltaMS += elapsedTimeMS;
                     if (deltaMS > 100.0f)
@@ -184,10 +226,10 @@ namespace BlockMarket
                 {
                     debugText =
                     "FPS: " + gameState.FPS + "\r\n" +
-                    "Mouse Delta: " + game.MainWindow.AbsMousePosition + "\r\n" +
-                    camera.DebugString +
+                    //"Mouse Delta: " + game.MainWindow.AbsMousePosition + "\r\n" +
+                    //camera.DebugString +
                     world.DebugString +
-                    player.DebugString +
+                    //player.DebugString +
                     "";
 
                     // D3D Render
@@ -196,7 +238,7 @@ namespace BlockMarket
                     matViewProj.Transpose();
 
                     game.Context.UpdateSubresource(ref matViewProj, game.BufferManager.GetCB().Buffer);
-                    world.UpdateVertexBuffer(game.BufferManager.GetVB());
+                    // world.UpdateVertexBuffer(game.BufferManager.GetVB());
                     world.Render(game.Context, game.ResourceManager);
 
                     // D2D Render

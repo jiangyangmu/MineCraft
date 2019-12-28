@@ -65,6 +65,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Renderer.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="D3DBuffer.cs" />
     <Compile Include="D3DResourceManager.cs" />
