@@ -63,6 +63,8 @@ namespace BlockMarket
         }
         public void Start(ControlLogicMethod ControlLogic, GameLogicMethod GameLogic, RenderLogicMethod RenderLogic)
         {
+            var perfReset = false;
+
             // Setup window events & user input handling.
             {
                 mainWnd.MouseDown += (object sender, MouseEventArgs e) =>
@@ -82,6 +84,10 @@ namespace BlockMarket
                             windowEvent = WindowEvent.EnterFullScreen;
                         else if (windowEvent < WindowEvent.ExitFullScreen)
                             windowEvent = WindowEvent.ExitFullScreen;
+                    }
+                    else if (e.KeyCode == Keys.F)
+                    {
+                        perfReset = true;
                     }
                     else if (e.KeyCode == Keys.Escape)
                     {
@@ -137,19 +143,12 @@ namespace BlockMarket
                 perfRenderCounter += perfTimer.ElapsedTicks;
                 ++perfFrameCounter;
 
-                if (perfFrameCounter > 5000)
-                {
-                    perfFrameCounter = 0;
-                    perfPrepareCounter = 0;
-                    perfRenderCounter = 0;
-                    perfLogicCounter = 0;
-                }
                 mainWnd.debugText.Text =
                     debugText +
                     //"========= Misc =========" + "\r\n" +
                     //"Mouse Captured: " + mainWnd.Capture + "\r\n" +
                     "========= Performance =========" + "\r\n" +
-                    "Frame:" + perfFrameCounter + "\r\n" +
+                    //"Frame:" + perfFrameCounter + "\r\n" +
                     //"Prep   Tick:" + perfPrepareCounter + "\r\n" +
                     //"Logic  Tick:" + perfLogicCounter + "\r\n" +
                     //"Render Tick:" + perfRenderCounter + "\r\n" +
@@ -157,6 +156,14 @@ namespace BlockMarket
                     "Logic  Time (ms):" + (perfLogicCounter * 1000.0f / Stopwatch.Frequency / perfFrameCounter).ToString("0.00") + "\r\n" +
                     "Render Time (ms):" + (perfRenderCounter * 1000.0f / Stopwatch.Frequency / perfFrameCounter).ToString("0.00") + "\r\n" +
                     "";
+                if (perfReset)
+                {
+                    perfReset = false;
+                    perfFrameCounter = 0;
+                    perfPrepareCounter = 0;
+                    perfRenderCounter = 0;
+                    perfLogicCounter = 0;
+                }
                 perfTimer.Restart();
             });
         }

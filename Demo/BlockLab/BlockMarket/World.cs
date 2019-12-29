@@ -210,21 +210,6 @@ namespace BlockMarket
         }
     }
 
-    // Tree, Water
-    class GenerativeBlock
-    {
-        enum Type
-        {
-            TREE,
-            WATER,
-        }
-    }
-    // TNT
-    class DestructiveBlock
-    {
-
-    }
-
     class BlockManager
     {
         public bool IsDirty { get => isDirty; }
@@ -505,7 +490,7 @@ namespace BlockMarket
                 "Mine: " + (mineBlock.HasValue ? mineBlock.Value.pos.ToString() : "null") + "\r\n" +
                 "Put: " + (putBlock.HasValue ? putBlock.Value.pos.ToString() : "null") + "\r\n" +
                 "Ray: " + NumRay + "\r\n" +
-                "Water: " + (BlockRenderer.WaterBlockRender.Color) + "\r\n" +
+                //"Water: " + (BlockRenderer.WaterBlockRender.Color) + "\r\n" +
                 "";
         }
 
