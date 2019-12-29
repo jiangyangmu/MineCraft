@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Windows.Forms;
 using System.Diagnostics;
+using System.Collections.Generic;
 
 using SharpDX;
 using SharpDX.D3DCompiler;
@@ -16,12 +17,15 @@ namespace CreateBuffer
 {
     static class Program
     {
-        
+        static readonly int _1KB = 1024;
+        static readonly int _1MB = 1024 * 1024;
+
         static void Main()
         {
             InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain);
-            // TestParameters(mainWnd, device, swapChain);
-            TestDynamicVertexBuffer(device);
+            //TestParameters(mainWnd, device, swapChain);
+            //TestVB_InitUpdate(device);
+            TestVB_MaxBufNum(device, _1MB, 128);
         }
 
         static void InitializeDirectX(out Form mainWnd, out D3DDevice device, out SwapChain swapChain)
@@ -327,7 +331,7 @@ namespace CreateBuffer
                 Application.Run(mb);
             }
         }
-        static void TestDynamicVertexBuffer(D3DDevice device)
+        static void TestVB_InitUpdate(D3DDevice device)
         {
             string info = "";
             try
@@ -342,6 +346,38 @@ namespace CreateBuffer
                 vb.Update(vertices2);
 
                 vb.Dispose();
+            }
+            catch (Exception e)
+            {
+                info += "----------- Global Exception -----------\r\n";
+                info += e.ToString();
+            }
+            finally
+            {
+                var mb = new ScrollableMessageBox();
+                mb.showText.Text = info;
+                mb.Show();
+                Application.Run(mb);
+            }
+        }
+        static void TestVB_MaxBufNum(D3DDevice device, int bufSize, int maxNum)
+        {
+            string info = "";
+            try
+            {
+                var buf = new byte[bufSize];
+                var vbList = new List<DynamicVertexBuffer>();
+                for (int i = 0; i < maxNum; ++i)
+                {
+                    var vb = new DynamicVertexBuffer(ref device);
+                    vb.Init(buf);
+                    vbList.Add(vb);
+                }
+
+                for (int i = 0; i < maxNum; ++i)
+                {
+                    vbList[i].Dispose();
+                }
             }
             catch (Exception e)
             {
