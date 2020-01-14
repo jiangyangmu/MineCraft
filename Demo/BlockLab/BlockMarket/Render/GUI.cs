@@ -20,8 +20,8 @@ namespace BlockMarket
 
         public void LoadResources()
         {
-            bsToolBarBox = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "GUI/ToolBarBox.jpg");
-            bsToolBarSelect = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "GUI/ToolBarSelect.png");
+            bsToolBarBox = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "Resources/GUI/ToolBarBox.jpg");
+            bsToolBarSelect = D3DTextureLoader.LoadBitmap(new SharpDX.WIC.ImagingFactory2(), "Resources/GUI/ToolBarSelect.png");
 
             var textFactory = new SharpDX.DirectWrite.Factory();
             textFormat = new SharpDX.DirectWrite.TextFormat(textFactory, "Consolas", 12.0f);

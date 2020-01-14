@@ -62,41 +62,6 @@ namespace BlockMarket
             private float totalTimeMS = 0.0f;
         }
 
-        static void HugeRandomCube(World world, BlockType type = BlockType.PUT, int size = 256, int maxBlockCount = 1000000)
-        {
-            var rand = new Random();
-            var half = size / 2;
-            for (int i = 0; i < maxBlockCount; ++i)
-            {
-                var x = (int)(rand.NextLong() % size - half);
-                var y = (int)(rand.NextLong() % size - half);
-                var z = (int)(rand.NextLong() % size - half);
-                world.BlockManager.AddBlock(new Block(type, new Int3(x, y, z)));
-            }
-        }
-        static void HugeBox(World world, BlockType type = BlockType.PUT, int size = 256, int maxBlockCount = 1000000)
-        {
-            int half = size / 2;
-            for (int x = -half; x <= half; ++x)
-            {
-                for (int y = -half; y <= half; ++y)
-                {
-                    for (int z = -half; z <= half; ++z)
-                    {
-                        if (Math.Abs(x) >= half ||
-                            Math.Abs(y) >= half ||
-                            Math.Abs(z) >= half)
-                        {
-                            world.BlockManager.AddBlock(new Block(type, new Int3(x, y, z)));
-                            --maxBlockCount;
-                        }
-                        if (maxBlockCount <= 0) break;
-                    }
-                    if (maxBlockCount <= 0) break;
-                }
-                if (maxBlockCount <= 0) break;
-            }
-        }
         static void BlockShow(World world)
         {
             world.BlockManager.AddBlockPlane(Block.Grass(world.Origin), 10, 10, 10, 10);
@@ -111,12 +76,10 @@ namespace BlockMarket
         static void Main()
         {
             var world = new World();
-            HugeRandomCube(world, BlockType.GRASS, 128, 1000000);
-            //HugeBox(world, BlockType.GRASS, 256, 1000000);
-            //BlockShow(world);
             world.AddRay(Vector3.Zero, Vector3.UnitX, Vector3.UnitX);
             world.AddRay(Vector3.Zero, Vector3.UnitY, Vector3.UnitY);
             world.AddRay(Vector3.Zero, Vector3.UnitZ, Vector3.UnitZ);
+            BlockShow(world);
 
             var camera = new Camera(
                 pos: world.OriginF + 5.0f * world.UpF + 15.0f * world.ForwardF * 15.0f * world.RightF,
@@ -124,7 +87,7 @@ namespace BlockMarket
                 );
 
             var game = new Game();
-            game.Initialize(world);
+            game.Initialize();
 
             camera.AspectRatio = game.MainWindow.ClientSize.Width / (float)game.MainWindow.ClientSize.Height;
 
@@ -237,8 +200,8 @@ namespace BlockMarket
                     var matViewProj = camera.ViewMatrix * camera.ProjMatrix;
                     matViewProj.Transpose();
 
-                    game.Context.UpdateSubresource(ref matViewProj, game.BufferManager.GetCB().Buffer);
-                    // world.UpdateVertexBuffer(game.BufferManager.GetVB());
+                    game.Context.UpdateSubresource(ref matViewProj, game.ResourceManager.GetCB().Buffer);
+                    world.UpdateVertexBuffer(game.ResourceManager.GetVB());
                     world.Render(game.Context, game.ResourceManager);
 
                     // D2D Render
