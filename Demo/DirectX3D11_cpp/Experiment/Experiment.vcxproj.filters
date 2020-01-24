@@ -12,6 +12,7 @@
     </ClInclude>
     <ClInclude Include="Win32App.h" />
     <ClInclude Include="D3DApp.h" />
+    <ClInclude Include="ErrorHandling.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -20,6 +21,7 @@
     <ClCompile Include="Win32Main.cpp" />
     <ClCompile Include="Win32App.cpp" />
     <ClCompile Include="D3DApp.cpp" />
+    <ClCompile Include="ErrorHandling.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
@@ -35,5 +37,8 @@
     <ResourceCompile Include="resource.rc">
       <Filter>Misc</Filter>
     </ResourceCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="TODO.md" />
   </ItemGroup>
 </Project>

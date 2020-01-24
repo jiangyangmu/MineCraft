@@ -4,8 +4,6 @@
 
 namespace render
 {
-    extern void DXExitIfError(HRESULT hr);
-
     class D3DApplication : public win32::Application
     {
     public:
@@ -16,10 +14,19 @@ namespace render
     private:
         // Implement win32::Application
         void OnIdle() override;
+        void OnMove(int x, int y) override;
+        void OnResize(int width, int height) override;
 
         // --------------------------------------------------------------------------
         // Internal methods
         // --------------------------------------------------------------------------
+        void InitializeD3D();
+        void PrepareResources();
+        void InitializeD3DPipeline();
+        
+        void UpdateRenderTargets();
+        void SetFullScreen(bool isFullScreen);
+        
         void ClearScreen();
         void PresentNextFrame();
 
