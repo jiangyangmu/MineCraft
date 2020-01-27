@@ -3,62 +3,21 @@
 #include <vector>
 
 #include "Win32App.h"
+#include "D3DRenderer.h"
 
 namespace render
 {
-    // IRenderer
-    interface ID3DGraphicsPipeline
-    {
-        // Create resources
-        virtual void    Prepare(ID3D11Device * d3dDevice, float aspectRatio) = 0;
-        // Bind resources to context, configure context
-        virtual void    Draw(ID3D11DeviceContext * d3dContext) = 0;
-    };
-
-    class D3DTriangle : public ID3DGraphicsPipeline
-    {
-    public:
-        virtual void    Prepare(ID3D11Device * d3dDevice, float aspectRatio) override;
-        virtual void    Draw(ID3D11DeviceContext * d3dContext) override;
-
-    private:
-        struct ConstantBufferStruct
-        {
-            DirectX::XMFLOAT4X4 mvp;
-        };
-        struct ShaderByteCode
-        {
-            size_t  nSize;
-            BYTE *  pBytes;
-        };
-        void            LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC);
-
-        ID3D11Device *              m_d3dDevice;
-        ID3D11DeviceContext *       m_d3dContext;
-        
-        ID3D11Buffer *              m_d3dVertexBuffer;
-        ID3D11Buffer *              m_d3dConstantBuffer;
-        ConstantBufferStruct        m_constantBufferData;
-
-        ID3D11InputLayout *         m_d3dInputLayout;
-        ID3D11VertexShader *        m_d3dVertexShader;
-        ID3D11PixelShader *         m_d3dPixelShader;
-        ShaderByteCode              m_vertexShaderByteCode;
-        ShaderByteCode              m_pixelShaderByteCode;
-
-        ID3D11RasterizerState *    m_rasterizerState;
-    };
-
     class D3DApplication : public win32::Application
     {
     public:
         using win32::Application::Application;
 
-        void            RegisterGP(ID3DGraphicsPipeline * pGP);
+        // Before Initialize()
+        void            RegisterRenderer(ID3DRenderer * pRender);
 
         void            Initialize();
 
-        virtual void    UpdateScene(double ms);
+        virtual void    UpdateScene(double milliSeconds);
         virtual void    DrawScene();
 
     private:
@@ -70,9 +29,8 @@ namespace render
         // --------------------------------------------------------------------------
         // Internal methods
         // --------------------------------------------------------------------------
-        void InitializeD3D();
-        void PrepareResources();
-        void InitializeD3DPipeline();
+        void InitializeD3DDevice();
+        void InitializeD3DPipelines();
         
         void UpdateRenderTargets(int width, int height);
         void SetFullScreen(bool isFullScreen);
@@ -83,8 +41,7 @@ namespace render
         // --------------------------------------------------------------------------
         // Internal State
         // --------------------------------------------------------------------------
-        typedef std::vector<ID3DGraphicsPipeline*> GPList;
-        GPList                      m_graphicsPipelines;
+        std::vector<ID3DRenderer*>  m_renders;
         LARGE_INTEGER               m_timerFrequence;
         LARGE_INTEGER               m_timerPreviousValue;
         double                      m_fps;

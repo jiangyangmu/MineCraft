@@ -8,23 +8,52 @@
     <Filter Include="Renderer">
       <UniqueIdentifier>{e90dfe6f-941c-4ffa-93b8-4f13684744cb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Shader">
+      <UniqueIdentifier>{1b6be2da-110b-4c72-9a7f-f6d5bb6a11f1}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{44e0137f-5997-4d07-9f88-78f990e337e5}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Misc</Filter>
     </ClInclude>
-    <ClInclude Include="Win32App.h" />
     <ClInclude Include="D3DApp.h" />
     <ClInclude Include="ErrorHandling.h" />
+    <ClInclude Include="Win32App.h">
+      <Filter>Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="TriangleRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="CubeRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DRenderer.h" />
+    <ClInclude Include="RendererUtil.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
-    <ClCompile Include="Win32Main.cpp" />
-    <ClCompile Include="Win32App.cpp" />
     <ClCompile Include="D3DApp.cpp" />
     <ClCompile Include="ErrorHandling.cpp" />
+    <ClCompile Include="Win32App.cpp">
+      <Filter>Win32</Filter>
+    </ClCompile>
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="TriangleRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="CubeRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="RendererUtil.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
@@ -45,7 +74,11 @@
     <None Include="TODO.md" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="VertexShader.hlsl" />
-    <FxCompile Include="PixelShader.hlsl" />
+    <FxCompile Include="VertexShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="PixelShader.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
   </ItemGroup>
 </Project>

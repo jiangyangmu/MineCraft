@@ -159,21 +159,28 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="CubeRenderer.h" />
     <ClInclude Include="D3DApp.h" />
     <ClInclude Include="ErrorHandling.h" />
+    <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RendererUtil.h" />
+    <ClInclude Include="TriangleRenderer.h" />
     <ClInclude Include="Win32App.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CubeRenderer.cpp" />
     <ClCompile Include="D3DApp.cpp" />
     <ClCompile Include="ErrorHandling.cpp" />
-    <ClCompile Include="Win32Main.cpp" />
+    <ClCompile Include="Main.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RendererUtil.cpp" />
+    <ClCompile Include="TriangleRenderer.cpp" />
     <ClCompile Include="Win32App.cpp" />
   </ItemGroup>
   <ItemGroup>

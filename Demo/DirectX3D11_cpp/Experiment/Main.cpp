@@ -6,6 +6,9 @@
 #include "D3DApp.h"
 #include "ErrorHandling.h"
 
+#include "TriangleRenderer.h"
+#include "CubeRenderer.h"
+
 namespace win32
 {
     class WindowDebug : public Application
@@ -93,11 +96,6 @@ int WINAPI wWinMain(
     //    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
     //#endif
 
-    // win32::ENSURE_TRUE(false);
-    // win32::ENSURE_OK(E_OUTOFMEMORY);
-    // win32::ENSURE_NOT_NULL(nullptr);
-    // dx::THROW_IF_FAILED(E_OUTOFMEMORY);
-
     win32::InitializeCOM();
 
     auto * keyboard     = new win32::KeyboardDebug();
@@ -106,8 +104,10 @@ int WINAPI wWinMain(
     
     keyboard->SetHWND(app->GetHWND());
     
-    render::D3DTriangle triangle;
-    app->RegisterGP(&triangle);
+    render::TriangleRenderer tri;
+    render::CubeRenderer cube;
+    app->RegisterRenderer(&tri);
+    app->RegisterRenderer(&cube);
 
     app->Initialize();
     app->SetKeyboardInput(keyboard);
