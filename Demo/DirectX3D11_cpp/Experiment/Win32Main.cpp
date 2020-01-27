@@ -55,12 +55,16 @@ namespace win32
     public:
         virtual void OnMouseMove(int pixelX, int pixelY, DWORD flags) override
         {
+            UNREFERENCED_PARAMETER(flags);
+
             wchar_t msg[64];
             swprintf_s(msg, L"Mose Move: %d %d\n", pixelX, pixelY);
             OutputDebugString(msg);
         }
         virtual void OnMouseLButtonDown(int pixelX, int pixelY, DWORD flags) override
         {
+            UNREFERENCED_PARAMETER(flags);
+
             wchar_t msg[64];
             swprintf_s(msg, L"Mose LButton Down: %d %d\n", pixelX, pixelY);
             OutputDebugString(msg);
@@ -83,6 +87,11 @@ int WINAPI wWinMain(
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
+    
+    // Enable run-time memory check for debug builds.
+    //#if defined(DEBUG) | defined(_DEBUG)
+    //    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+    //#endif
 
     // win32::ENSURE_TRUE(false);
     // win32::ENSURE_OK(E_OUTOFMEMORY);
@@ -93,17 +102,20 @@ int WINAPI wWinMain(
 
     auto * keyboard     = new win32::KeyboardDebug();
     auto * mouse        = new win32::MouseDebug();
-    auto * window       = new render::D3DApplication(L"DX Demo", hInstance);
+    auto * app          = new render::D3DApplication(L"DX Demo", hInstance);
     
-    keyboard->SetHWND(window->GetHWND());
+    keyboard->SetHWND(app->GetHWND());
     
-    window->Initialize();
-    window->SetKeyboardInput(keyboard);
-    window->SetMouseInput(mouse);
+    render::D3DTriangle triangle;
+    app->RegisterGP(&triangle);
+
+    app->Initialize();
+    app->SetKeyboardInput(keyboard);
+    app->SetMouseInput(mouse);
     
-    int ret             = win32::Application::Run(*window);
+    int ret             = win32::Application::Run(*app);
     
-    delete window;
+    delete app;
     delete keyboard;
     delete mouse;
 

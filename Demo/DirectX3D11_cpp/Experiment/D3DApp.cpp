@@ -1,12 +1,26 @@
 #include "pch.h"
 
+#include <sstream>
+
 #include "D3DApp.h"
 #include "ErrorHandling.h"
 
+using win32::ENSURE_TRUE;
+using win32::ENSURE_OK;
+using win32::ENSURE_CLIB_SUCCESS;
 using dx::THROW_IF_FAILED;
 
 namespace render
 {
+
+void D3DApplication::RegisterGP(ID3DGraphicsPipeline * pGP)
+{
+    ENSURE_TRUE(
+        pGP != nullptr &&
+        std::find(m_graphicsPipelines.begin(), m_graphicsPipelines.end(), pGP) == m_graphicsPipelines.end());
+
+    m_graphicsPipelines.push_back(pGP);
+}
 
 void D3DApplication::Initialize()
 {
@@ -14,6 +28,15 @@ void D3DApplication::Initialize()
 
     if (!DirectX::XMVerifyCPUSupport())
         throw new std::exception("Missing DirectXMath support.");
+
+    // Initialize timer.
+    
+    ENSURE_TRUE(
+        QueryPerformanceFrequency(&m_timerFrequence));
+    m_timerPreviousValue.QuadPart = 0;
+    m_fps = 0.0;
+
+    // Initialize DirectX.
 
     m_d3dDevice = NULL;
     m_d3dContext = NULL;
@@ -32,12 +55,62 @@ void D3DApplication::Initialize()
     InitializeD3DPipeline();
 
     // Initialize render targets.
-    UpdateRenderTargets();
+    UpdateRenderTargets(GetWidth(), GetHeight());
+}
+
+void D3DApplication::UpdateScene(double ms)
+{
+    UNREFERENCED_PARAMETER(ms);
+}
+
+void D3DApplication::DrawScene()
+{
+    for (ID3DGraphicsPipeline * pGP : m_graphicsPipelines)
+    {
+        pGP->Draw(m_d3dContext);
+    }
 }
 
 void D3DApplication::OnIdle()
 {
     ClearScreen();
+
+    double ms;
+    if (m_timerPreviousValue.QuadPart != 0)
+    {
+        LARGE_INTEGER delta;
+        
+        delta           = m_timerPreviousValue;
+        
+        ENSURE_TRUE(
+            QueryPerformanceCounter(&m_timerPreviousValue));
+        
+        delta.QuadPart  = m_timerPreviousValue.QuadPart - delta.QuadPart;
+        delta.QuadPart  *= 1000;
+        delta.QuadPart  /= m_timerFrequence.QuadPart;
+        
+        ms = static_cast<double>(delta.QuadPart);
+    }
+    else
+    {
+        ENSURE_TRUE(
+            QueryPerformanceCounter(&m_timerPreviousValue));
+        
+        ms = 1.0;
+    }
+
+    m_fps = 0.5 * m_fps + 0.5 * 1000.0 / ms;
+    {
+        std::wstringstream ss;
+        ss.precision(2);
+        ss << L"FPS: " << m_fps;
+        SetWindowText(GetHWND(), ss.str().c_str());
+        Sleep(33);
+    }
+    
+    UpdateScene(ms);
+    DrawScene();
+
     PresentNextFrame();
 }
 
@@ -49,8 +122,7 @@ void D3DApplication::OnMove(int x, int y)
 
 void D3DApplication::OnResize(int width, int height)
 {
-    UNREFERENCED_PARAMETER(width);
-    UNREFERENCED_PARAMETER(height);
+    UpdateRenderTargets(width, height);
 }
 
 void D3DApplication::InitializeD3D()
@@ -100,8 +172,9 @@ void D3DApplication::InitializeD3D()
             dxgiAdapter,
             D3D_DRIVER_TYPE_UNKNOWN,
             0,
-            D3D11_CREATE_DEVICE_BGRA_SUPPORT, // D3D11_CREATE_DEVICE_BGRA_SUPPORT - Required to work with DirectX 2D
-                                              // D3D11_CREATE_DEVICE_DEBUG - For debug
+            // D3D11_CREATE_DEVICE_BGRA_SUPPORT - Required to work with DirectX 2D
+            // D3D11_CREATE_DEVICE_DEBUG - For debug
+            D3D11_CREATE_DEVICE_BGRA_SUPPORT, 
             NULL,
             0,
             D3D11_SDK_VERSION,
@@ -129,15 +202,18 @@ void D3DApplication::PrepareResources()
 
 void D3DApplication::InitializeD3DPipeline()
 {
-    // Setup graphics pipeline
-    // 0. Prepare buffers
-    // 1. IA, VS, PS stage: Prepare shaders, bind buffers
+    float aspectRatio = static_cast<float>(GetWidth()) / static_cast<float>(GetHeight());
+    for (ID3DGraphicsPipeline * pGP : m_graphicsPipelines)
+    {
+        pGP->Prepare(m_d3dDevice,
+                     aspectRatio);
+    }
 }
 
-void D3DApplication::UpdateRenderTargets()
+void D3DApplication::UpdateRenderTargets(int width, int height)
 {
-    const int W = GetWidth();
-    const int H = GetHeight();
+    const int W = width;
+    const int H = height;
 
     // Dispose D3D & D2D render target objects.
 
@@ -178,7 +254,7 @@ void D3DApplication::UpdateRenderTargets()
     depthStencilDesc.Height = H;
     depthStencilDesc.MipLevels = 1;
     depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT; // DXGI_FORMAT_D24_UNORM_S8_UINT;
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
     depthStencilDesc.SampleDesc.Count = 1;
     depthStencilDesc.SampleDesc.Quality = 0;
     depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
@@ -197,6 +273,12 @@ void D3DApplication::UpdateRenderTargets()
             &m_DepthStencilView));
     depthStencilBuffer->Release();
 
+    // Set render targets
+    
+    m_d3dContext->OMSetRenderTargets(1,
+                                     &m_RenderTargetView,
+                                     m_DepthStencilView);
+
     // D2D: context
 
     m_d2dContext = nullptr;
@@ -212,11 +294,12 @@ void D3DApplication::ClearScreen()
 {
     m_d3dContext->ClearDepthStencilView(
         m_DepthStencilView,
-        D3D11_CLEAR_DEPTH,
+        D3D11_CLEAR_DEPTH | D3D11_CLEAR_STENCIL,
         1.0f,
         0
     );
-    DirectX::XMFLOAT4 Black(0.0f, 0.0f, 0.0f, 0.0f);
+    
+    DirectX::XMFLOAT4 Black(0.0f, 0.0f, 0.0f, 1.0f);
     m_d3dContext->ClearRenderTargetView(
         m_RenderTargetView,
         reinterpret_cast<float *>(&Black)
@@ -227,6 +310,181 @@ void D3DApplication::PresentNextFrame()
 {
     THROW_IF_FAILED(
         m_SwapChain->Present(0, 0));
+}
+
+void D3DTriangle::Prepare(ID3D11Device * d3dDevice, float aspectRatio)
+{
+    m_d3dDevice = d3dDevice;
+
+    // Vertex buffer
+
+    float data[] =
+    {
+         -1.0f, 0.0f, 0.0f, 1.0f,       1.0f, 0.0f, 0.0f, 1.0f,
+          0.0f, 0.867f, 0.0f, 1.0f,     0.0f, 1.0f, 0.0f, 1.0f,
+          1.0f, 0.0f, 0.0f, 1.0f,       0.0f, 0.0f, 1.0f, 1.0f,
+    };
+
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    vertexBufferDesc.Usage                  = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth              = sizeof(data);
+    vertexBufferDesc.BindFlags              = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.CPUAccessFlags         = 0;
+    vertexBufferDesc.MiscFlags              = 0;
+    vertexBufferDesc.StructureByteStride    = 0;
+
+    D3D11_SUBRESOURCE_DATA vertexData;
+    vertexData.pSysMem                      = data;
+    vertexData.SysMemPitch                  = 0;
+    vertexData.SysMemSlicePitch             = 0;
+
+    ENSURE_OK(
+        m_d3dDevice->CreateBuffer(&vertexBufferDesc,
+                                  &vertexData,
+                                  &m_d3dVertexBuffer));
+
+    // Vertex shader
+
+    LoadCompiledShaderFromFile(TEXT("..\\Debug\\VertexShader.vso"), &m_vertexShaderByteCode);
+
+    ENSURE_OK(
+        m_d3dDevice->CreateVertexShader(m_vertexShaderByteCode.pBytes,
+                                        m_vertexShaderByteCode.nSize,
+                                        nullptr,
+                                        &m_d3dVertexShader));
+
+    // Input layout
+
+    D3D11_INPUT_ELEMENT_DESC inputElementDescs[] =
+    {
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+    };
+    ENSURE_OK(
+        m_d3dDevice->CreateInputLayout(inputElementDescs,
+                                       ARRAYSIZE(inputElementDescs),
+                                       m_vertexShaderByteCode.pBytes,
+                                       m_vertexShaderByteCode.nSize,
+                                       &m_d3dInputLayout));
+
+    // Pixel shader
+
+    LoadCompiledShaderFromFile(TEXT("..\\Debug\\PixelShader.pso"), &m_pixelShaderByteCode);
+
+    ENSURE_OK(
+        m_d3dDevice->CreatePixelShader(m_pixelShaderByteCode.pBytes,
+                                       m_pixelShaderByteCode.nSize,
+                                       nullptr,
+                                       &m_d3dPixelShader));
+
+    // Constant buffer
+
+    DirectX::XMVECTOR eye = DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.f);
+    DirectX::XMVECTOR at = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.f);
+    DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.f);
+
+    DirectX::XMStoreFloat4x4(
+        &m_constantBufferData.mvp,
+        DirectX::XMMatrixTranspose(
+            DirectX::XMMatrixMultiply(
+                DirectX::XMMatrixLookAtLH(
+                    eye,
+                    at,
+                    up
+                ),
+                DirectX::XMMatrixPerspectiveFovLH(
+                    DirectX::XMConvertToRadians(70),
+                    aspectRatio,
+                    0.01f,
+                    1000.0f
+                )
+            )));
+
+    CD3D11_BUFFER_DESC constantBufferDesc(
+        sizeof(ConstantBufferStruct),
+        D3D11_BIND_CONSTANT_BUFFER
+    );
+
+    ENSURE_OK(
+        m_d3dDevice->CreateBuffer(&constantBufferDesc,
+                                  nullptr,
+                                  &m_d3dConstantBuffer));
+}
+
+// https://docs.microsoft.com/en-us/windows/win32/direct3dgetstarted/complete-code-sample-for-using-a-corewindow-with-directx
+void D3DTriangle::Draw(ID3D11DeviceContext * d3dContext)
+{
+    // IA(vb, ib) + VS(cb, shader) + RS(viewport) + PS(texture, shader) + OM(render targets)
+    m_d3dContext = d3dContext;
+    
+    // Update constant buffer
+
+    m_d3dContext->UpdateSubresource(m_d3dConstantBuffer,
+                                    0,
+                                    nullptr,
+                                    &m_constantBufferData,
+                                    0,
+                                    0);
+
+    // Set IA stage
+
+    UINT strides = sizeof(float) * 4 * 2;
+    UINT offsets = 0;
+    m_d3dContext->IASetVertexBuffers(0, // slot
+                                     1, // number of buffers
+                                     &m_d3dVertexBuffer,
+                                     &strides,
+                                     &offsets);
+    
+    m_d3dContext->IASetPrimitiveTopology(
+        D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+    m_d3dContext->IASetInputLayout(m_d3dInputLayout);
+
+    // Set VS stage
+
+    m_d3dContext->VSSetShader(m_d3dVertexShader,
+                              nullptr,
+                              0);
+
+    m_d3dContext->VSSetConstantBuffers(0,
+                                       1,
+                                       &m_d3dConstantBuffer);
+
+    // Set PS stage
+
+    m_d3dContext->PSSetShader(m_d3dPixelShader,
+                              nullptr,
+                              0);
+
+    // Draw
+    m_d3dContext->Draw(3, 0);
+}
+
+void D3DTriangle::LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC)
+{
+    FILE *  pFile;
+    long    nSize;
+    size_t  nReadSize;
+
+    ENSURE_CLIB_SUCCESS(    _wfopen_s(&pFile, pFileName, TEXT("rb"))    );
+    
+    ENSURE_CLIB_SUCCESS(    fseek(pFile, 0, SEEK_END)                   );
+    
+    nSize                   = ftell(pFile);
+    ENSURE_TRUE(nSize > 0);
+    
+    ENSURE_CLIB_SUCCESS(    fseek(pFile, 0, SEEK_SET)                   );
+    
+    pSBC->nSize             = static_cast<size_t>(nSize);
+    pSBC->pBytes            = new BYTE[nSize];
+
+    nReadSize               = fread_s(pSBC->pBytes,
+                                      pSBC->nSize,
+                                      sizeof(BYTE),
+                                      pSBC->nSize,
+                                      pFile);
+    ENSURE_TRUE(nReadSize == pSBC->nSize);
 }
 
 }

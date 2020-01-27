@@ -5,6 +5,9 @@
       <UniqueIdentifier>ebb405fe-ca1b-4642-a7be-7610b29ccfcd</UniqueIdentifier>
       <Extensions>ico;cur;bmp;dds;dlg;fbx;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tga;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Renderer">
+      <UniqueIdentifier>{e90dfe6f-941c-4ffa-93b8-4f13684744cb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -40,5 +43,9 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="TODO.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="VertexShader.hlsl" />
+    <FxCompile Include="PixelShader.hlsl" />
   </ItemGroup>
 </Project>

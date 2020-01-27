@@ -1,4 +1,4 @@
-TODO
+TODO: DX workflow
 
 --------------------------------------------------------------------------------
 
@@ -55,3 +55,6 @@ Win32
     Philosophy: https://docs.microsoft.com/en-us/windows/win32/debug/error-message-guidelines
 * Debugger: https://docs.microsoft.com/en-us/windows/win32/api/debugapi/
     
+DX
+* Math: https://docs.microsoft.com/en-us/windows/win32/dxmath/ovw-xnamath-reference-functions
+

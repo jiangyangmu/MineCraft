@@ -1,7 +1,6 @@
 #include "pch.h"
 
-#include <cstdio>
-#include <cwchar>
+#include <tchar.h>
 #include <strsafe.h>
 #include <DbgHelp.h>
 
@@ -9,7 +8,12 @@
 
 #define IGNORE_ERROR(hr) ((void)hr)
 
-static DWORD GetErrorMessageOfLastError(LPTSTR lpBuffer, DWORD nSize, DWORD dwErrorCode = GetLastError())
+static void StackTraceBreakpoint()
+{
+    return;
+}
+
+static DWORD GetErrorMessage(LPTSTR lpBuffer, DWORD nSize, DWORD dwMessageId)
 {
     DWORD   dwFlags;
     DWORD   dwCount;
@@ -21,7 +25,7 @@ static DWORD GetErrorMessageOfLastError(LPTSTR lpBuffer, DWORD nSize, DWORD dwEr
     
     dwCount         = FormatMessage(dwFlags,
                                     NULL, // lpSource
-                                    dwErrorCode,
+                                    dwMessageId,
                                     MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // dwLanguageId
                                     lpBuffer,
                                     nSize,
@@ -56,9 +60,10 @@ static void PopupErrorMessage(LPTSTR lpMsgPrefix)
 
     // Format error message
 
-    GetErrorMessageOfLastError(
+    GetErrorMessage(
         szBuffer + nCount,
-        BUF_SIZE - nCount);
+        BUF_SIZE - nCount,
+        GetLastError());
 
     // Show message box
 
@@ -138,27 +143,27 @@ static void GetStackTrace(LPTSTR lpBuffer, DWORD nSize, PCONTEXT ctx)
 
         line = (PIMAGEHLP_LINEW64)malloc(sizeof(IMAGEHLP_LINEW64));
         line->SizeOfStruct = sizeof(IMAGEHLP_LINEW64);
+        
 
         //try to get line
         if (SymGetLineFromAddrW64(process, stack.AddrPC.Offset, &disp, line))
         {
-            int nCnt = swprintf_s(lpBuffer,
-                                  nSize,
-                                  TEXT("\tat %Ts in %Ts: line: %lu: address: 0x%llX\n"),
-                                  pSymbol->Name,
-                                  line->FileName,
-                                  line->LineNumber,
-                                  pSymbol->Address);
+            int nCnt = _stprintf_s(lpBuffer,
+                                   nSize,
+                                   TEXT("  at %-64.64Tsin %Ts:%lu\n"),
+                                   pSymbol->Name,
+                                   _tcsrchr(line->FileName, TEXT('\\')) + 1,
+                                   line->LineNumber);
             lpBuffer += nCnt, nSize -= nCnt;
         }
         else
         { 
             //failed to get line
-            int nCnt = swprintf_s(lpBuffer,
-                                  nSize,
-                                  TEXT("\tat %Ts, address 0x%llX.\n"),
-                                  pSymbol->Name,
-                                  pSymbol->Address);
+            int nCnt = _stprintf_s(lpBuffer,
+                                   nSize,
+                                   TEXT("  at %-64.64Tsaddress 0x%llX.\n"),
+                                   pSymbol->Name,
+                                   pSymbol->Address);
             lpBuffer += nCnt, nSize -= nCnt;
 
             hModule = NULL;
@@ -169,13 +174,18 @@ static void GetStackTrace(LPTSTR lpBuffer, DWORD nSize, PCONTEXT ctx)
                 &hModule);
 
             //at least print module name
-            if(hModule != NULL)GetModuleFileName(hModule, module, MaxNameLen);       
-
-            nCnt = swprintf_s(lpBuffer,
-                              nSize,
-                              TEXT("in %Ts\n"),
-                              module);
-            lpBuffer += nCnt, nSize -= nCnt;
+            if(hModule != NULL)
+            {
+                GetModuleFileName(hModule, module, MaxNameLen);
+                if (lstrlen(module) > 0)
+                {
+                    nCnt = _stprintf_s(lpBuffer,
+                                       nSize,
+                                       TEXT("in %Ts\n"),
+                                       _tcsrchr(module, TEXT('\\')) + 1);
+                    lpBuffer += nCnt, nSize -= nCnt;
+                }
+            }
         }
 
         free(line);
@@ -211,7 +221,7 @@ static int  SEH_ExceptionFilter(DWORD dwExceptionCode,
 
     if (dwErrorCode != 0)
     {
-        nCnt = GetErrorMessageOfLastError(lpBuffer, nSize, dwErrorCode);
+        nCnt = GetErrorMessage(lpBuffer, nSize, dwErrorCode);
         lpBuffer += nCnt, nSize -= nCnt;
         nCnt = swprintf_s(lpBuffer, nSize, TEXT("\n"));
         lpBuffer += nCnt, nSize -= nCnt;
@@ -248,13 +258,14 @@ namespace win32
     {
         if (!bRet)
         {
-            
+            StackTraceBreakpoint();
+
             __try
             {
                 RaiseException(0, 0, 0, NULL);
             }
             __except (SEH_ExceptionFilter(
-                GetExceptionCode(),
+                0,
                 0,
                 (GetExceptionInformation())->ContextRecord,
                 TEXT("Expect true.")))
@@ -269,12 +280,14 @@ namespace win32
     {
         if (pv == NULL)
         {
+            StackTraceBreakpoint();
+
             __try
             {
                 RaiseException(0, 0, 0, NULL);
             }
             __except (SEH_ExceptionFilter(
-                GetExceptionCode(),
+                0,
                 0,
                 (GetExceptionInformation())->ContextRecord,
                 TEXT("Null pointer.")))
@@ -289,22 +302,53 @@ namespace win32
     {
         if (FAILED(hr))
         {
-            DWORD dwErrorCode = GetLastError();
+            StackTraceBreakpoint();
+
             __try
             {
                 RaiseException(0, 0, 0, NULL);
             }
             __except (SEH_ExceptionFilter(
-                GetExceptionCode(),
-                dwErrorCode,
+                0,
+                hr,
                 (GetExceptionInformation())->ContextRecord,
                 TEXT("HRESULT error.")))
             {
             }
 
-            ExitProcess(dwErrorCode);
+            ExitProcess(hr);
         }
     }
+
+    extern void ENSURE_CLIB_SUCCESS(int iRet)
+    {
+        if (iRet != 0)
+        {
+            StackTraceBreakpoint();
+
+            TCHAR   message[256]    = TEXT("C Function Error: ");
+            int     prefix          = lstrlen(message);
+
+            _wcserror_s(message + prefix,
+                        256 - prefix,
+                        errno);
+
+            __try
+            {
+                RaiseException(0, 0, 0, NULL);
+            }
+            __except (SEH_ExceptionFilter(
+                0,
+                0,
+                (GetExceptionInformation())->ContextRecord,
+                message))
+            {
+            }
+
+            ExitProcess(0);
+        }
+    }
+
 }
 
 namespace dx
@@ -313,20 +357,21 @@ namespace dx
     {
         if (FAILED(hr))
         {
-            DWORD dwErrorCode = GetLastError();
+            StackTraceBreakpoint();
+
             __try
             {
                 RaiseException(0, 0, 0, NULL);
             }
             __except (SEH_ExceptionFilter(
-                GetExceptionCode(),
-                dwErrorCode,
+                0,
+                hr,
                 (GetExceptionInformation())->ContextRecord,
                 TEXT("DX HRESULT error.")))
             {
             }
 
-            ExitProcess(dwErrorCode);
+            ExitProcess(hr);
         }
     }
 }
