@@ -21,7 +21,9 @@ namespace render
         virtual void    DrawScene();
 
     private:
-        // Implement win32::Application
+        // --------------------------------------------------------------------------
+        // Main window events
+        // --------------------------------------------------------------------------
         void OnIdle() override;
         void OnMove(int x, int y) override;
         void OnResize(int width, int height) override;

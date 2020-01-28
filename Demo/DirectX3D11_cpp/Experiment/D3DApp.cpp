@@ -169,6 +169,86 @@ void D3DApplication::PresentNextFrame()
         m_SwapChain->Present(0, 0));
 }
 
+// Resizing
+void D3DApplication::UpdateRenderTargets(int width, int height)
+{
+    const int W = width;
+    const int H = height;
+
+    // Dispose D3D & D2D render target objects.
+
+    if (m_RenderTargetView) m_RenderTargetView->Release();
+    if (m_DepthStencilView) m_DepthStencilView->Release();
+    if (m_d2dContext)       m_d2dContext->Release();
+
+    // D3D: swapChain, viewport, renderTargetView, depthBuffer, depthStencilView
+
+    THROW_IF_FAILED(
+        m_SwapChain->ResizeBuffers(1, W, H, DXGI_FORMAT_UNKNOWN, 0));
+
+    D3D11_VIEWPORT viewport;
+    viewport.TopLeftX = 0.0f;
+    viewport.TopLeftY = 0.0f;
+    viewport.Width = static_cast<float>(W);
+    viewport.Height = static_cast<float>(H);
+    viewport.MinDepth = 0.0f;
+    viewport.MaxDepth = 1.0f;
+    m_d3dContext->RSSetViewports(1, &viewport);
+
+    ID3D11Texture2D * backBuffer;
+    THROW_IF_FAILED(
+        m_SwapChain->GetBuffer(
+            0,
+            __uuidof(ID3D11Texture2D),
+            reinterpret_cast<void**>(&backBuffer)));
+    THROW_IF_FAILED(
+        m_d3dDevice->CreateRenderTargetView(
+            backBuffer,
+            nullptr,
+            &m_RenderTargetView));
+    backBuffer->Release();
+
+    ID3D11Texture2D * depthStencilBuffer;
+    D3D11_TEXTURE2D_DESC depthStencilDesc;
+    depthStencilDesc.Width = W;
+    depthStencilDesc.Height = H;
+    depthStencilDesc.MipLevels = 1;
+    depthStencilDesc.ArraySize = 1;
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
+    depthStencilDesc.SampleDesc.Count = 1;
+    depthStencilDesc.SampleDesc.Quality = 0;
+    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
+    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
+    depthStencilDesc.CPUAccessFlags = 0;
+    depthStencilDesc.MiscFlags = 0;
+    THROW_IF_FAILED(
+        m_d3dDevice->CreateTexture2D(
+            &depthStencilDesc,
+            0,
+            &depthStencilBuffer));
+    THROW_IF_FAILED(
+        m_d3dDevice->CreateDepthStencilView(
+            depthStencilBuffer,
+            0,
+            &m_DepthStencilView));
+    depthStencilBuffer->Release();
+
+    // Set render targets
+
+    m_d3dContext->OMSetRenderTargets(1,
+                                     &m_RenderTargetView,
+                                     m_DepthStencilView);
+
+    // D2D: context
+
+    m_d2dContext = nullptr;
+}
+void D3DApplication::SetFullScreen(bool isFullScreen)
+{
+    THROW_IF_FAILED(
+        m_SwapChain->SetFullscreenState(isFullScreen, NULL));
+}
+
 // On win32 events
 void D3DApplication::OnIdle()
 {
@@ -220,86 +300,6 @@ void D3DApplication::OnMove(int x, int y)
 void D3DApplication::OnResize(int width, int height)
 {
     UpdateRenderTargets(width, height);
-}
-
-// Resizing
-void D3DApplication::UpdateRenderTargets(int width, int height)
-{
-    const int W = width;
-    const int H = height;
-
-    // Dispose D3D & D2D render target objects.
-
-    if (m_RenderTargetView) m_RenderTargetView->Release();
-    if (m_DepthStencilView) m_DepthStencilView->Release();
-    if (m_d2dContext)       m_d2dContext->Release();
-
-    // D3D: swapChain, viewport, renderTargetView, depthBuffer, depthStencilView
-
-    THROW_IF_FAILED(
-        m_SwapChain->ResizeBuffers(1, W, H, DXGI_FORMAT_UNKNOWN, 0));
-
-    D3D11_VIEWPORT viewport;
-    viewport.TopLeftX = 0.0f;
-    viewport.TopLeftY = 0.0f;
-    viewport.Width = static_cast<float>(W);
-    viewport.Height = static_cast<float>(H);
-    viewport.MinDepth = 0.0f;
-    viewport.MaxDepth = 1.0f;
-    m_d3dContext->RSSetViewports(1, &viewport);
-
-    ID3D11Texture2D * backBuffer;
-    THROW_IF_FAILED(
-        m_SwapChain->GetBuffer(
-            0,
-            __uuidof(ID3D11Texture2D),
-            reinterpret_cast<void**>(&backBuffer)));
-    THROW_IF_FAILED(
-        m_d3dDevice->CreateRenderTargetView(
-            backBuffer,
-            0,
-            &m_RenderTargetView));
-    backBuffer->Release();
-
-    ID3D11Texture2D * depthStencilBuffer;
-    D3D11_TEXTURE2D_DESC depthStencilDesc;
-    depthStencilDesc.Width = W;
-    depthStencilDesc.Height = H;
-    depthStencilDesc.MipLevels = 1;
-    depthStencilDesc.ArraySize = 1;
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT_S8X24_UINT;
-    depthStencilDesc.SampleDesc.Count = 1;
-    depthStencilDesc.SampleDesc.Quality = 0;
-    depthStencilDesc.Usage = D3D11_USAGE_DEFAULT;
-    depthStencilDesc.BindFlags = D3D11_BIND_DEPTH_STENCIL;
-    depthStencilDesc.CPUAccessFlags = 0;
-    depthStencilDesc.MiscFlags = 0;
-    THROW_IF_FAILED(
-        m_d3dDevice->CreateTexture2D(
-            &depthStencilDesc,
-            0,
-            &depthStencilBuffer));
-    THROW_IF_FAILED(
-        m_d3dDevice->CreateDepthStencilView(
-            depthStencilBuffer,
-            0,
-            &m_DepthStencilView));
-    depthStencilBuffer->Release();
-
-    // Set render targets
-    
-    m_d3dContext->OMSetRenderTargets(1,
-                                     &m_RenderTargetView,
-                                     m_DepthStencilView);
-
-    // D2D: context
-
-    m_d2dContext = nullptr;
-}
-void D3DApplication::SetFullScreen(bool isFullScreen)
-{
-    THROW_IF_FAILED(
-        m_SwapChain->SetFullscreenState(isFullScreen, NULL));
 }
 
 }

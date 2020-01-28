@@ -14,6 +14,10 @@ Win32: User input
 
 --------------------------------------------------------------------------------
 
+CRT
+* Intro: https://docs.microsoft.com/en-us/cpp/c-runtime-library/c-run-time-library-reference?view=vs-2019
+* API: https://docs.microsoft.com/en-us/cpp/c-runtime-library/run-time-routines-by-category?view=vs-2019
+
 Error handling
 * EH in COM: https://docs.microsoft.com/en-us/windows/win32/learnwin32/error-handling-in-com
 * EH in Win32: https://docs.microsoft.com/en-us/windows/win32/debug/error-handling-functions
