@@ -34,6 +34,7 @@
     <ClInclude Include="RendererUtil.h">
       <Filter>Renderer</Filter>
     </ClInclude>
+    <ClInclude Include="Event.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
