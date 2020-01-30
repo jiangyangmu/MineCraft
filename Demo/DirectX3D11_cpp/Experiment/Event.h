@@ -4,7 +4,7 @@
 
 namespace event
 {
-
+    // composition style
     template <typename TArgs>
     struct EventHandler
     {
@@ -13,13 +13,49 @@ namespace event
         virtual         ~EventHandler() = default;
 
         virtual void    operator() (void * sender, const TArgs & args) = 0;
+
     };
     template <>
     struct EventHandler<void>
     {
+        using ArgType = void;
+
         virtual         ~EventHandler() = default;
 
         virtual void    operator() (void * sender) = 0;
+    };
+    // inheritance style
+    template <typename TReceiver, typename TEventHandler, typename TArgs = typename TEventHandler::ArgType>
+    struct EventHandlerClass : public TEventHandler
+    {
+        static_assert(std::is_base_of_v<EventHandler<TArgs>, TEventHandler>,
+                      "Must inherit from EventHandler or its subclass.");
+
+        using FuncType = void (TReceiver::*)(void * sender, const TArgs & args);
+
+        virtual void    operator() (void * sender, const TArgs & args) override
+        {
+            (m_receiver->*m_handleFunc)(sender, args);
+        }
+
+        TReceiver *     m_receiver;
+        FuncType        m_handleFunc;
+    };
+    template <typename TReceiver, typename TEventHandler>
+    struct EventHandlerClass<TReceiver, TEventHandler, void> : public TEventHandler
+    {
+        static_assert(std::is_base_of_v<EventHandler<void>, TEventHandler>,
+                      "Must inherit from EventHandler or its subclass.");
+
+        using FuncType = void (TReceiver::*)(void * sender);
+
+        virtual void    operator() (void * sender) override
+        {
+            (m_receiver->*m_handleFunc)(sender);
+        }
+
+        TReceiver *     m_receiver;
+        FuncType        m_handleFunc;
     };
     template <typename TArgs>
     class Event
@@ -77,11 +113,13 @@ namespace event
 // --------------------------------------------------------------------------
 
 #define _DEFINE_EVENT(name) \
-    struct name##EventHandler : EventHandler<void> {}; \
-    struct name##Event : Event<void> {};
+    struct name##EventHandler : ::event::EventHandler<void> { using ::event::EventHandler<void>::EventHandler; }; \
+    template <typename TReceiver> class name##EventHandlerClass : public ::event::EventHandlerClass<TReceiver, name##EventHandler> {}; \
+    struct name##Event : ::event::Event<void> {};
 #define _DEFINE_EVENT1(name, args) \
-    struct name##EventHandler : EventHandler<args> {}; \
-    struct name##Event : Event<args> {};
+    struct name##EventHandler : ::event::EventHandler<args> { using ::event::EventHandler<args>::EventHandler; }; \
+    template <typename TReceiver> class name##EventHandlerClass : public ::event::EventHandlerClass<TReceiver, name##EventHandler> {}; \
+    struct name##Event : ::event::Event<args> {};
 
 // --------------------------------------------------------------------------
 // Define Senders, Receivers, and Bind
@@ -93,6 +131,7 @@ namespace event
     public: \
         name##Event & Get##name##Event() { return __##name##_event_object; }
 
+// composition style
 #define _RECV_EVENT_DECL(name) \
     private: \
         struct __##name##EventHandlerImpl : public name##EventHandler \
@@ -111,6 +150,34 @@ namespace event
         name##EventHandler & Get##name##EventHandler() { return __##name##_event_handler; }
 #define _RECV_EVENT_IMPL(receiver, name) \
     void receiver::__##name##EventHandlerImpl::operator()
+
+// inheritance style
+#define _IS_EVENT_HANDLER(handler, name) \
+    private name##EventHandlerClass<handler>
+#define _HANDLE_EVENT_DECL(name) \
+    name##EventHandler & Get##name##EventHandler() \
+    { \
+        using ThisType = std::remove_reference<decltype(*this)>::type; \
+        using EventHandlerClassType = name##EventHandlerClass<ThisType>; \
+        /* should only assign once */ \
+        EventHandlerClassType::m_receiver = this; \
+        EventHandlerClassType::m_handleFunc = &ThisType::__##name##EventHandleFunc; \
+        return static_cast<EventHandlerClassType&>(*this); \
+    } \
+    void __##name##EventHandleFunc(void * sender);
+#define _HANDLE_EVENT_DECL1(name) \
+    name##EventHandler & Get##name##EventHandler() \
+    { \
+        using ThisType = std::remove_reference<decltype(*this)>::type; \
+        using EventHandlerClassType = name##EventHandlerClass<ThisType>; \
+        /* should only assign once */ \
+        EventHandlerClassType::m_receiver = this; \
+        EventHandlerClassType::m_handleFunc = &ThisType::__##name##EventHandleFunc; \
+        return static_cast<EventHandlerClassType&>(*this); \
+    } \
+    void __##name##EventHandleFunc(void * sender, const name##EventHandler::ArgType & args);
+#define _HANDLE_EVENT_IMPL(handler, name) \
+    void handler::__##name##EventHandleFunc
 
 #define _BIND_EVENT(name, sender, receiver) \
     do { \
@@ -137,7 +204,11 @@ namespace event
 // --------------------------------------------------------------------------
 // Usage
 // --------------------------------------------------------------------------
-/*
+// #define _TEST_EVENT_USAGE_
+#ifdef _TEST_EVENT_USAGE_
+
+    // #include <sstream>
+
     _DEFINE_EVENT(NoArg)
     _DEFINE_EVENT1(IntArg, int)
     struct ComplexArgs
@@ -162,7 +233,16 @@ namespace event
         _RECV_EVENT_DECL1(CpxArg)
     };
 
-    #include <sstream>
+    struct Joo
+        : _IS_EVENT_HANDLER(Joo, NoArg)
+        , _IS_EVENT_HANDLER(Joo, IntArg)
+        , _IS_EVENT_HANDLER(Joo, CpxArg)
+    {
+        _HANDLE_EVENT_DECL(NoArg)
+        _HANDLE_EVENT_DECL1(IntArg)
+        _HANDLE_EVENT_DECL1(CpxArg)
+    };
+
     _RECV_EVENT_IMPL(Bar, NoArg) (void * sender)
     {
         std::wostringstream ss;
@@ -181,11 +261,30 @@ namespace event
         ss << "Receive CpxArg event from " << reinterpret_cast<Foo *>(sender)->name << " args = {" << args.x << "," << args.y << "," << args.z << "}" << std::endl;
         OutputDebugString(ss.str().c_str());
     }
+    _HANDLE_EVENT_IMPL(Joo, NoArg) (void * sender)
+    {
+        std::wostringstream ss;
+        ss << "Receive NoArg event from " << reinterpret_cast<Foo *>(sender)->name << std::endl;
+        OutputDebugString(ss.str().c_str());
+    }
+    _HANDLE_EVENT_IMPL(Joo, IntArg) (void * sender, const int & args)
+    {
+        std::wostringstream ss;
+        ss << "Receive IntArg event from " << reinterpret_cast<Foo *>(sender)->name << " args = " << args << std::endl;
+        OutputDebugString(ss.str().c_str());
+    }
+    _HANDLE_EVENT_IMPL(Joo, CpxArg) (void * sender, const ComplexArgs & args)
+    {
+        std::wostringstream ss;
+        ss << "Receive CpxArg event from " << reinterpret_cast<Foo *>(sender)->name << " args = {" << args.x << "," << args.y << "," << args.z << "}" << std::endl;
+        OutputDebugString(ss.str().c_str());
+    }
 
     void Usage()
     {
         Foo foo;
         Bar bar;
+        Joo joo;
 
         _BIND_EVENT(NoArg, foo, bar);
         _BIND_EVENT(IntArg, foo, bar);
@@ -210,7 +309,30 @@ namespace event
         _DISPATCH_EVENT(NoArg, foo);
         _DISPATCH_EVENT1(IntArg, foo, 123);
         _DISPATCH_EVENT1(CpxArg, foo, ca);
-    }
-*/
 
+        _BIND_EVENT(NoArg, foo, joo);
+        _BIND_EVENT(IntArg, foo, joo);
+        _BIND_EVENT(CpxArg, foo, joo);
+
+        _DISPATCH_EVENT(NoArg, foo);
+        _DISPATCH_EVENT1(IntArg, foo, 123);
+        _DISPATCH_EVENT1(CpxArg, foo, ca);
+
+        _UNBIND_EVENT(NoArg, foo, joo);
+        _DISPATCH_EVENT(NoArg, foo);
+        _DISPATCH_EVENT1(IntArg, foo, 123);
+        _DISPATCH_EVENT1(CpxArg, foo, ca);
+
+        _UNBIND_EVENT(IntArg, foo, joo);
+        _DISPATCH_EVENT(NoArg, foo);
+        _DISPATCH_EVENT1(IntArg, foo, 123);
+        _DISPATCH_EVENT1(CpxArg, foo, ca);
+
+        _UNBIND_EVENT(CpxArg, foo, joo);
+        _DISPATCH_EVENT(NoArg, foo);
+        _DISPATCH_EVENT1(IntArg, foo, 123);
+        _DISPATCH_EVENT1(CpxArg, foo, ca);
+    }
+
+#endif
 }
