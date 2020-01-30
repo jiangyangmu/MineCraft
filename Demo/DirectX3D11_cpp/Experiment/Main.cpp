@@ -9,33 +9,10 @@
 #include "TriangleRenderer.h"
 #include "CubeRenderer.h"
 
+using win32::ENSURE_TRUE;
+
 namespace win32
 {
-    class WindowDebug : public Application
-    {
-    public:
-        using Application::Application;
-
-    protected:
-        virtual void OnIdle() override
-        {
-            SetWindowText(GetHWND(), L"OnIdle");
-            Sleep(1);
-        }
-        virtual void OnMove(int x, int y) override
-        {
-            TCHAR buffer[64];
-            StringCchPrintf(buffer, 64, L"OnMove: x:%d y:%d", x, y);
-            SetWindowText(GetHWND(), buffer);
-        }
-        virtual void OnResize(int width, int height) override
-        {
-            TCHAR buffer[64];
-            StringCchPrintf(buffer, 64, L"OnResize: w:%d h:%d", width, height);
-            SetWindowText(GetHWND(), buffer);
-        }
-    };
-
     class KeyboardDebug : public KeyboardInput
     {
     public:
@@ -79,6 +56,48 @@ namespace win32
             OutputDebugString(msg);
         }
     };
+
+    class WindowEventDebug
+    {
+    public:
+        _RECV_EVENT(WindowEventDebug, OnWndIdle)
+            (void * sender)
+        {
+            Window *    pWindow = static_cast<Window *>(sender); // safe?
+
+            TCHAR       szTitle[128];
+            GetWindowText(pWindow->GetHWND(), szTitle, 128);
+
+            std::wostringstream ss;
+            ss << "Receive OnWndIdle from window: " << szTitle << std::endl;
+            OutputDebugString(ss.str().c_str());
+            Sleep(1);
+        }
+        _RECV_EVENT1(WindowEventDebug, OnWndMove)
+            (void * sender, const WindowRect & rect)
+        {
+            Window *    pWindow = static_cast<Window *>(sender); // safe?
+
+            TCHAR       szTitle[128];
+            GetWindowText(pWindow->GetHWND(), szTitle, 128);
+
+            std::wostringstream ss;
+            ss << "Receive OnWndMove from window: " << szTitle << " x: " << rect.x << " y: " << rect.y << std::endl;
+            OutputDebugString(ss.str().c_str());
+        }
+        _RECV_EVENT1(WindowEventDebug, OnWndResize)
+            (void * sender, const WindowRect & rect)
+        {
+            Window *    pWindow = static_cast<Window *>(sender); // safe?
+
+            TCHAR       szTitle[128];
+            GetWindowText(pWindow->GetHWND(), szTitle, 128);
+
+            std::wostringstream ss;
+            ss << "Receive OnWndResize from window: " << szTitle << " w: " << rect.width << " h: " << rect.height << std::endl;
+            OutputDebugString(ss.str().c_str());
+        }
+    };
 }
 
 int WINAPI wWinMain(
@@ -90,7 +109,7 @@ int WINAPI wWinMain(
     UNREFERENCED_PARAMETER(hPrevInstance);
     UNREFERENCED_PARAMETER(lpCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
-    
+
     // Enable run-time memory check for debug builds.
     //#if defined(DEBUG) | defined(_DEBUG)
     //    _CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
@@ -101,8 +120,8 @@ int WINAPI wWinMain(
     auto * keyboard     = new win32::KeyboardDebug();
     auto * mouse        = new win32::MouseDebug();
     auto * app          = new render::D3DApplication(L"DX Demo", hInstance);
-    
-    keyboard->SetHWND(app->GetHWND());
+
+    keyboard->SetHWND(app->GetWindow().GetHWND());
     
     render::TriangleRenderer tri;
     render::CubeRenderer cube;
@@ -110,10 +129,15 @@ int WINAPI wWinMain(
     app->RegisterRenderer(&cube);
 
     app->Initialize();
-    app->SetKeyboardInput(keyboard);
-    app->SetMouseInput(mouse);
+    app->GetWindow().SetKeyboardInput(keyboard);
+    app->GetWindow().SetMouseInput(mouse);
     
-    int ret             = win32::Application::Run(*app);
+    win32::WindowEventDebug wed;
+    _BIND_EVENT(OnWndIdle, app->GetWindow(), wed);
+    _BIND_EVENT(OnWndMove, app->GetWindow(), wed);
+    _BIND_EVENT(OnWndResize, app->GetWindow(), wed);
+
+    int ret             = win32::Application::Run(app->GetWindow());
     
     delete app;
     delete keyboard;

@@ -13,6 +13,11 @@ using dx::THROW_IF_FAILED;
 namespace render
 {
 
+D3DApplication::D3DApplication(LPCWSTR lpTitle, HINSTANCE hInstance)
+    : m_mainWnd(lpTitle, hInstance)
+{
+}
+
 // Initialization
 void D3DApplication::Initialize()
 {
@@ -44,7 +49,7 @@ void D3DApplication::Initialize()
     InitializeD3DPipelines();
 
     // Initialize render targets.
-    UpdateRenderTargets(GetWidth(), GetHeight());
+    UpdateRenderTargets(m_mainWnd.GetWidth(), m_mainWnd.GetHeight());
 }
 void D3DApplication::InitializeD3DDevice()
 {
@@ -72,8 +77,8 @@ void D3DApplication::InitializeD3DDevice()
     // * display mode (resolution, refresh rate, format, scanline, scale)
     // * surface format
     DXGI_SWAP_CHAIN_DESC swapChainDesc;
-    swapChainDesc.BufferDesc.Width = GetWidth();
-    swapChainDesc.BufferDesc.Height = GetHeight();
+    swapChainDesc.BufferDesc.Width = m_mainWnd.GetWidth();
+    swapChainDesc.BufferDesc.Height = m_mainWnd.GetHeight();
     swapChainDesc.BufferDesc.RefreshRate.Numerator = 60;
     swapChainDesc.BufferDesc.RefreshRate.Denominator = 1;
     swapChainDesc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM; // Required to work with DirectX 2D
@@ -83,7 +88,7 @@ void D3DApplication::InitializeD3DDevice()
     swapChainDesc.SampleDesc.Quality = 0;
     swapChainDesc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
     swapChainDesc.BufferCount = 1;
-    swapChainDesc.OutputWindow = GetHWND();
+    swapChainDesc.OutputWindow = m_mainWnd.GetHWND();
     swapChainDesc.Windowed = true;
     swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_DISCARD;
     swapChainDesc.Flags = 0;
@@ -125,7 +130,7 @@ void D3DApplication::RegisterRenderer(ID3DRenderer * pRender)
 }
 void D3DApplication::InitializeD3DPipelines()
 {
-    float aspectRatio = static_cast<float>(GetWidth()) / static_cast<float>(GetHeight());
+    float aspectRatio = m_mainWnd.GetAspectRatio();
     
     for (ID3DGraphicsPipeline * pGP : m_renders)
     {
@@ -250,8 +255,11 @@ void D3DApplication::SetFullScreen(bool isFullScreen)
 }
 
 // On win32 events
-void D3DApplication::OnIdle()
+_RECV_EVENT_IMPL(D3DApplication, OnWndIdle)
+(void * sender)
 {
+    UNREFERENCED_PARAMETER(sender);
+
     ClearScreen();
 
     double milliSeconds;
@@ -283,7 +291,7 @@ void D3DApplication::OnIdle()
         std::wstringstream ss;
         ss.precision(2);
         ss << L"FPS: " << m_fps;
-        SetWindowText(GetHWND(), ss.str().c_str());
+        SetWindowText(m_mainWnd.GetHWND(), ss.str().c_str());
         Sleep(33);
     }
     
@@ -292,14 +300,19 @@ void D3DApplication::OnIdle()
 
     PresentNextFrame();
 }
-void D3DApplication::OnMove(int x, int y)
+_RECV_EVENT_IMPL(D3DApplication, OnWndMove)
+(void * sender, const win32::WindowRect & rect)
 {
-    UNREFERENCED_PARAMETER(x);
-    UNREFERENCED_PARAMETER(y);
+    UNREFERENCED_PARAMETER(sender);
+    UNREFERENCED_PARAMETER(rect);
 }
-void D3DApplication::OnResize(int width, int height)
+_RECV_EVENT_IMPL(D3DApplication, OnWndResize)
+(void * sender, const win32::WindowRect & rect)
 {
-    UpdateRenderTargets(width, height);
+    UNREFERENCED_PARAMETER(sender);
+
+    UpdateRenderTargets(rect.width, rect.height);
 }
+
 
 }

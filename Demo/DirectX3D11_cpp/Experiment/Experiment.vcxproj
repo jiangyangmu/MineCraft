@@ -164,6 +164,7 @@
     <ClInclude Include="ErrorHandling.h" />
     <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="Event.h" />
+    <ClInclude Include="EventDefinitions.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="RendererUtil.h" />
     <ClInclude Include="TriangleRenderer.h" />

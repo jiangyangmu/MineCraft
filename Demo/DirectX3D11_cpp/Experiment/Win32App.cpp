@@ -104,6 +104,9 @@ Window::Window(LPCWSTR lpTitle, HINSTANCE hInstance)
 
     m_width             = rect.right - rect.left;
     m_height            = rect.bottom - rect.top;
+
+    m_keyboardInput     = nullptr;
+    m_mouseInput        = nullptr;
 }
 
 void Window::Show()
@@ -168,6 +171,7 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
     // Map win32 events to Window events
 
+    WindowRect rect;
     switch (uMsg)
     {
         // Window events
@@ -186,8 +190,10 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         case WM_MOVE:
             // Sent after a window has been moved.
             {
-                OnMove(LOWORD(lParam),  // x
-                       HIWORD(lParam)); // y
+                rect.x      = LOWORD(lParam);
+                rect.y      = HIWORD(lParam);
+                
+                _DISPATCH_EVENT1(OnWndMove, *this, rect);
             }
             return 0;
 
@@ -197,7 +203,10 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
             {
                 m_width     = LOWORD(lParam);
                 m_height    = HIWORD(lParam);
-                OnResize(m_width, m_height);
+                rect.width  = m_width;
+                rect.height = m_height;
+
+                _DISPATCH_EVENT1(OnWndResize, *this, rect);
             }
             return 0;
 
@@ -221,13 +230,13 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_KEYDOWN:
             {
-                m_keyboardInput->OnKeyDown(wParam);
+                if (m_keyboardInput) m_keyboardInput->OnKeyDown(wParam);
             }
             return 0;
 
         case WM_KEYUP:
             {
-                m_keyboardInput->OnKeyUp(wParam);
+                if (m_keyboardInput) m_keyboardInput->OnKeyUp(wParam);
             }
             return 0;
 
@@ -239,15 +248,16 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_LBUTTONDOWN:
             {
-                m_mouseInput->OnMouseLButtonDown(GET_X_LPARAM(lParam),
-                                                 GET_Y_LPARAM(lParam),
-                                                 (DWORD)wParam);
+                if (m_mouseInput)
+                    m_mouseInput->OnMouseLButtonDown(GET_X_LPARAM(lParam),
+                                                     GET_Y_LPARAM(lParam),
+                                                     (DWORD)wParam);
             }
             return 0;
 
         case WM_LBUTTONUP:
             {
-                m_mouseInput->OnMouseLButtonUp();
+                if (m_mouseInput) m_mouseInput->OnMouseLButtonUp();
             }
             return 0;
 
@@ -266,9 +276,10 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_MOUSEMOVE:
             {
-                m_mouseInput->OnMouseMove(GET_X_LPARAM(lParam),
-                                          GET_Y_LPARAM(lParam),
-                                          (DWORD)wParam);
+                if (m_mouseInput)
+                    m_mouseInput->OnMouseMove(GET_X_LPARAM(lParam),
+                                              GET_Y_LPARAM(lParam),
+                                              (DWORD)wParam);
             }
             return 0;
 
@@ -279,9 +290,9 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     return DefWindowProc(m_hWnd, uMsg, wParam, lParam);
 }
 
-int Application::Run(Application & app)
+int Application::Run(Window & mainWnd)
 {
-    app.Show();
+    mainWnd.Show();
 
     MSG msg;
 
@@ -296,7 +307,7 @@ int Application::Run(Application & app)
         }
         else
         {
-            app.OnIdle();
+            _DISPATCH_EVENT(OnWndIdle, mainWnd);
         }
     }
 

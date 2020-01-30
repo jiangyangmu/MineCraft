@@ -3,6 +3,8 @@
 #include <windows.h>
 #include <functional>
 
+#include "EventDefinitions.h"
+
 namespace win32
 {
     // Window
@@ -63,14 +65,14 @@ namespace win32
         HWND            GetHWND() const { return m_hWnd; }
         int             GetWidth() const { return m_width; }
         int             GetHeight() const { return m_height; }
+        float           GetAspectRatio() const { return static_cast<float>(m_width) / static_cast<float>(m_height); }
         void            SetKeyboardInput(IKeyboardInput * pKeyboardInput) { m_keyboardInput = pKeyboardInput; }
         void            SetMouseInput(IMouseInput * pMouseInput) { m_mouseInput = pMouseInput; }
 
-    protected:
         // Events
-        virtual void    OnIdle() = 0;
-        virtual void    OnMove(int x, int y) = 0;
-        virtual void    OnResize(int width, int height) = 0;
+        _SEND_EVENT(OnWndIdle)
+        _SEND_EVENT(OnWndMove)
+        _SEND_EVENT(OnWndResize)
 
     private:
         // Win32 interfaces
@@ -86,11 +88,9 @@ namespace win32
         IMouseInput *       m_mouseInput;
     };
 
-    class Application : public Window 
+    class Application
     {
     public:
-        static int      Run(Application & app);
-
-        using Window::Window;
+        static int      Run(Window & mainWnd);
     };
 }

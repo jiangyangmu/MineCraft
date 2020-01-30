@@ -7,27 +7,29 @@
 
 namespace render
 {
-    class D3DApplication : public win32::Application
+    class D3DApplication
     {
     public:
-        using win32::Application::Application;
+        D3DApplication(LPCWSTR lpTitle, HINSTANCE hInstance);
 
-        // Before Initialize()
+        // Operations
+
+        // call before Initialize()
         void            RegisterRenderer(ID3DRenderer * pRender);
-
         void            Initialize();
-
         virtual void    UpdateScene(double milliSeconds);
         virtual void    DrawScene();
 
-    private:
-        // --------------------------------------------------------------------------
-        // Main window events
-        // --------------------------------------------------------------------------
-        void OnIdle() override;
-        void OnMove(int x, int y) override;
-        void OnResize(int width, int height) override;
+        // Properties
 
+        win32::Window & GetWindow() { return m_mainWnd; }
+
+        // Event Handling
+        _RECV_EVENT_DECL(D3DApplication, OnWndIdle);
+        _RECV_EVENT_DECL1(D3DApplication, OnWndMove);
+        _RECV_EVENT_DECL1(D3DApplication, OnWndResize);
+
+    private:
         // --------------------------------------------------------------------------
         // Internal methods
         // --------------------------------------------------------------------------
@@ -43,6 +45,7 @@ namespace render
         // --------------------------------------------------------------------------
         // Internal State
         // --------------------------------------------------------------------------
+        win32::Window               m_mainWnd;
         std::vector<ID3DRenderer*>  m_renders;
         LARGE_INTEGER               m_timerFrequence;
         LARGE_INTEGER               m_timerPreviousValue;

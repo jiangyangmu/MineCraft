@@ -14,13 +14,18 @@
     <Filter Include="Win32">
       <UniqueIdentifier>{44e0137f-5997-4d07-9f88-78f990e337e5}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{542fa57b-94c8-4336-b28f-a3d12759e5b0}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{e5755e4f-8625-4fbd-afcd-764e355b2ee9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
       <Filter>Misc</Filter>
     </ClInclude>
     <ClInclude Include="D3DApp.h" />
-    <ClInclude Include="ErrorHandling.h" />
     <ClInclude Include="Win32App.h">
       <Filter>Win32</Filter>
     </ClInclude>
@@ -34,14 +39,21 @@
     <ClInclude Include="RendererUtil.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="Event.h" />
+    <ClInclude Include="ErrorHandling.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="Event.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="EventDefinitions.h">
+      <Filter>Event</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
     <ClCompile Include="D3DApp.cpp" />
-    <ClCompile Include="ErrorHandling.cpp" />
     <ClCompile Include="Win32App.cpp">
       <Filter>Win32</Filter>
     </ClCompile>
@@ -54,6 +66,9 @@
     </ClCompile>
     <ClCompile Include="RendererUtil.cpp">
       <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorHandling.cpp">
+      <Filter>Common</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
