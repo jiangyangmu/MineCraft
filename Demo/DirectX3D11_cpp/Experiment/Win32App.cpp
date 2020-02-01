@@ -104,9 +104,6 @@ Window::Window(LPCWSTR lpTitle, HINSTANCE hInstance)
 
     m_width             = rect.right - rect.left;
     m_height            = rect.bottom - rect.top;
-
-    m_keyboardInput     = nullptr;
-    m_mouseInput        = nullptr;
 }
 
 void Window::Show()
@@ -231,13 +228,11 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_KEYDOWN:
             {
-                if (m_keyboardInput) m_keyboardInput->OnKeyDown(wParam);
             }
             return 0;
 
         case WM_KEYUP:
             {
-                if (m_keyboardInput) m_keyboardInput->OnKeyUp(wParam);
             }
             return 0;
 
@@ -249,16 +244,11 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_LBUTTONDOWN:
             {
-                if (m_mouseInput)
-                    m_mouseInput->OnMouseLButtonDown(GET_X_LPARAM(lParam),
-                                                     GET_Y_LPARAM(lParam),
-                                                     (DWORD)wParam);
             }
             return 0;
 
         case WM_LBUTTONUP:
             {
-                if (m_mouseInput) m_mouseInput->OnMouseLButtonUp();
             }
             return 0;
 
@@ -281,11 +271,6 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
                 mouseEventArgs.pixelY = GET_Y_LPARAM(lParam);
                 mouseEventArgs.flags = (DWORD)wParam;
                 _DISPATCH_EVENT1(OnMouseMove, *this, mouseEventArgs);
-
-                if (m_mouseInput)
-                    m_mouseInput->OnMouseMove(GET_X_LPARAM(lParam),
-                                              GET_Y_LPARAM(lParam),
-                                              (DWORD)wParam);
             }
             return 0;
 
@@ -318,15 +303,6 @@ int Application::Run(Window & mainWnd)
     }
 
     return (int)msg.wParam;
-}
-
-bool KeyboardInput::TestKeyState(WPARAM keyCode, int keyState)
-{
-    SHORT realBits = GetKeyState(keyCode);
-    SHORT testBits = MAKEWPARAM(((keyState & KS_DOWN) ? 1 : 0),
-                                ((keyState & KS_TOGGLED) ? 1 : 0));
-
-    return (realBits & testBits) == realBits;
 }
 
 }

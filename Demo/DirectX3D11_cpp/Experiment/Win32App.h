@@ -13,44 +13,6 @@ namespace win32
     void                InitializeCOM();
     void                UninitializeCOM();
 
-    interface IKeyboardInput
-    {
-        virtual void    OnKeyDown(WPARAM keyCode) = 0;
-        virtual void    OnKeyUp(WPARAM keyCode) = 0;
-    };
-
-    class KeyboardInput : public IKeyboardInput
-    {
-    public:
-        enum KeyState
-        {
-            KS_DOWN,
-            KS_UP,
-            KS_TOGGLED,
-            KS_UNTOGGLED,
-        };
-
-        KeyboardInput() : m_hWnd(NULL) {}
-
-        // Operations
-        // must call in the same thread of OnKeyDown/OnKeyUp
-        bool            TestKeyState(WPARAM keyCode, int keyState);
-
-        // Properties
-        void            SetHWND(HWND hWnd) { m_hWnd = hWnd; }
-        HWND            GetHWND() const { return m_hWnd; }
-
-    private:
-        HWND            m_hWnd;
-    };
-
-    interface IMouseInput
-    {
-        virtual void    OnMouseMove(int pixelX, int pixelY, DWORD flags) = 0;
-        virtual void    OnMouseLButtonDown(int pixelX, int pixelY, DWORD flags) = 0;
-        virtual void    OnMouseLButtonUp() = 0;
-    };
-
     class Window
     {
     public:
@@ -66,8 +28,6 @@ namespace win32
         int             GetWidth() const { return m_width; }
         int             GetHeight() const { return m_height; }
         float           GetAspectRatio() const { return static_cast<float>(m_width) / static_cast<float>(m_height); }
-        void            SetKeyboardInput(IKeyboardInput * pKeyboardInput) { m_keyboardInput = pKeyboardInput; }
-        void            SetMouseInput(IMouseInput * pMouseInput) { m_mouseInput = pMouseInput; }
 
         // Events
         public: _SEND_EVENT(OnWndIdle)
@@ -84,9 +44,6 @@ namespace win32
         HWND            m_hWnd;
         int             m_width;
         int             m_height;
-
-        IKeyboardInput *    m_keyboardInput;
-        IMouseInput *       m_mouseInput;
     };
 
     class Application
