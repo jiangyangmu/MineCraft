@@ -9,6 +9,7 @@
 #include "CameraRenderer.h"
 #include "TriangleRenderer.h"
 #include "CubeRenderer.h"
+#include "SkyboxRenderer.h"
 
 using win32::ENSURE_TRUE;
 
@@ -77,15 +78,17 @@ int WINAPI wWinMain(
     auto app    = render::D3DApplication(L"DX Demo", hInstance);
 
     render::CameraRenderer      camera;
+    render::SkyboxRenderer      skybox;
     render::TriangleRenderer    tri;
     render::CubeRenderer        cube;
 
     app.RegisterRenderer(&camera);
+    app.RegisterRenderer(&skybox);
     app.RegisterRenderer(&tri);
-    app.RegisterRenderer(&cube);
+    // app.RegisterRenderer(&cube);
 
-    _BIND_EVENT(OnAspectRatioChange, app, camera.GetCamera());
-    _BIND_EVENT(OnMouseMove, app.GetWindow(), camera.GetCamera().GetController());
+    _BIND_EVENT(OnAspectRatioChange,    app,                camera.GetCamera());
+    _BIND_EVENT(OnMouseMove,            app.GetWindow(),    camera.GetCamera().GetController());
 
     app.Initialize();
     

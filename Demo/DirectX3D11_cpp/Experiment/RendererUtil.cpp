@@ -8,6 +8,7 @@ using namespace win32;
 namespace render
 {
 
+// D3DCompileFromFile
 void LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC)
 {
     FILE *  pFile;
