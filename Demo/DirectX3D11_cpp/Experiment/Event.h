@@ -91,14 +91,12 @@ namespace event
 // --------------------------------------------------------------------------
 
 #define _SEND_EVENT(name) \
-    public: \
         name##Event & Get##name##Event() { return __##name##_event_sender; } \
     private: \
         name##Event __##name##_event_sender;
 
 // receiver with inline handler
 #define _RECV_EVENT(receiver, name) \
-    public: \
         name##EventHandler & Get##name##EventHandler() \
         { \
             __##name##_event_receiver.m_receiver = this; \
@@ -115,7 +113,6 @@ namespace event
         } __##name##_event_receiver; \
         void __##name##_EventHandleFunc
 #define _RECV_EVENT1(receiver, name) \
-    public: \
         name##EventHandler & Get##name##EventHandler() \
         { \
             __##name##_event_receiver.m_receiver = this; \

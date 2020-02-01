@@ -4,7 +4,7 @@
 
 namespace render
 {
-    interface ID3DGraphicsPipeline
+    interface ID3DPipelineModule
     {
         // Create resources
         // * Buffers
@@ -16,11 +16,11 @@ namespace render
         // * Bind resources to context
         // * Configure context
         virtual void    Draw(ID3D11DeviceContext * d3dContext) = 0;
-    };
 
-    interface ID3DRenderer : public ID3DGraphicsPipeline
-    {
-        // Update render objects
+        // Render
+        // * Update render objects
         virtual void    Update(double milliSeconds) = 0;
     };
+
+    using IRenderer     = ID3DPipelineModule;
 }

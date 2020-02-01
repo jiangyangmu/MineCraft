@@ -70,9 +70,10 @@ namespace win32
         void            SetMouseInput(IMouseInput * pMouseInput) { m_mouseInput = pMouseInput; }
 
         // Events
-        _SEND_EVENT(OnWndIdle)
-        _SEND_EVENT(OnWndMove)
-        _SEND_EVENT(OnWndResize)
+        public: _SEND_EVENT(OnWndIdle)
+        public: _SEND_EVENT(OnWndMove)
+        public: _SEND_EVENT(OnWndResize)
+        public: _SEND_EVENT(OnMouseMove)
 
     private:
         // Win32 interfaces

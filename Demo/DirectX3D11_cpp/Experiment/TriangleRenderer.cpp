@@ -11,15 +11,17 @@ namespace render
 
 void TriangleRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 {
+    UNREFERENCED_PARAMETER(aspectRatio);
+
     m_d3dDevice = d3dDevice;
 
     // Vertex buffer
 
     float data[] =
     {
-         -1.0f, 0.0f, -1.0f, 1.0f,       1.0f, 0.0f, 0.0f, 1.0f,
-          0.0f, 0.867f, -1.0f, 1.0f,     0.0f, 1.0f, 0.0f, 1.0f,
-          1.0f, 0.0f, -1.0f, 1.0f,       0.0f, 0.0f, 1.0f, 1.0f,
+          -1.0f, -1.0f, 0.0f, 1.0f,       1.0f, 0.0f, 0.0f, 1.0f,
+          -1.0f,  0.0f, 0.8f, 1.0f,       0.0f, 1.0f, 0.0f, 1.0f,
+          -1.0f,  1.0f, 0.0f, 1.0f,       0.0f, 0.0f, 1.0f, 1.0f,
     };
 
     D3D11_BUFFER_DESC vertexBufferDesc;
@@ -75,37 +77,7 @@ void TriangleRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
                                        &m_d3dPixelShader));
 
     // Constant buffer
-
-    DirectX::XMVECTOR eye = DirectX::XMVectorSet(0.0f, 0.0f, -5.0f, 0.f);
-    DirectX::XMVECTOR at = DirectX::XMVectorSet(0.0f, 0.0f, 0.0f, 0.f);
-    DirectX::XMVECTOR up = DirectX::XMVectorSet(0.0f, 1.0f, 0.0f, 0.f);
-
-    DirectX::XMStoreFloat4x4(
-        &m_constantBufferData.mvp,
-        DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixMultiply(
-                DirectX::XMMatrixLookAtLH(
-                    eye,
-                    at,
-                    up
-                ),
-                DirectX::XMMatrixPerspectiveFovLH(
-                    DirectX::XMConvertToRadians(70),
-                    aspectRatio,
-                    0.01f,
-                    1000.0f
-                )
-            )));
-
-    CD3D11_BUFFER_DESC constantBufferDesc(
-        sizeof(ConstantBufferStruct),
-        D3D11_BIND_CONSTANT_BUFFER
-    );
-
-    ENSURE_OK(
-        m_d3dDevice->CreateBuffer(&constantBufferDesc,
-                                  nullptr,
-                                  &m_d3dConstantBuffer));
+    // set by CameraRenderer
 }
 
 void TriangleRenderer::Update(double milliSeconds)
@@ -118,15 +90,6 @@ void TriangleRenderer::Draw(ID3D11DeviceContext * d3dContext)
     // IA(vb, ib) + VS(cb, shader) + RS(viewport) + PS(texture, shader) + OM(render targets)
     m_d3dContext = d3dContext;
     
-    // Update constant buffer
-
-    m_d3dContext->UpdateSubresource(m_d3dConstantBuffer,
-                                    0,
-                                    nullptr,
-                                    &m_constantBufferData,
-                                    0,
-                                    0);
-
     // Set IA stage
 
     UINT strides = sizeof(float) * 4 * 2;
@@ -147,10 +110,6 @@ void TriangleRenderer::Draw(ID3D11DeviceContext * d3dContext)
     m_d3dContext->VSSetShader(m_d3dVertexShader,
                               nullptr,
                               0);
-
-    m_d3dContext->VSSetConstantBuffers(0,
-                                       1,
-                                       &m_d3dConstantBuffer);
 
     // Set PS stage
 

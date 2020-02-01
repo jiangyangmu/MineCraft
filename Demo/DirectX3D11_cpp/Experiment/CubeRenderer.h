@@ -5,7 +5,7 @@
 
 namespace render
 {
-    class CubeRenderer : public ID3DRenderer
+    class CubeRenderer : public IRenderer
     {
     public:
         virtual void    Initialize(ID3D11Device * d3dDevice, float aspectRatio) override;
@@ -14,17 +14,10 @@ namespace render
         virtual void    Draw(ID3D11DeviceContext * d3dContext) override;
 
     private:
-        struct ConstantBufferStruct
-        {
-            DirectX::XMFLOAT4X4 mvp;
-        };
-        
         ID3D11Device *              m_d3dDevice;
         ID3D11DeviceContext *       m_d3dContext;
         
         ID3D11Buffer *              m_d3dVertexBuffer;
-        ID3D11Buffer *              m_d3dConstantBuffer;
-        ConstantBufferStruct        m_constantBufferData;
 
         ID3D11InputLayout *         m_d3dInputLayout;
         ID3D11VertexShader *        m_d3dVertexShader;
@@ -32,6 +25,6 @@ namespace render
         ShaderByteCode              m_vertexShaderByteCode;
         ShaderByteCode              m_pixelShaderByteCode;
 
-        ID3D11RasterizerState *    m_rasterizerState;
+        ID3D11RasterizerState *     m_rasterizerState;
     };
 }

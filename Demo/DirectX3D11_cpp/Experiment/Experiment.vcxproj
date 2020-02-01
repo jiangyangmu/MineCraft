@@ -159,6 +159,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraRenderer.h" />
     <ClInclude Include="CubeRenderer.h" />
     <ClInclude Include="D3DApp.h" />
     <ClInclude Include="ErrorHandling.h" />
@@ -171,6 +173,8 @@
     <ClInclude Include="Win32App.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraRenderer.cpp" />
     <ClCompile Include="CubeRenderer.cpp" />
     <ClCompile Include="D3DApp.cpp" />
     <ClCompile Include="ErrorHandling.cpp" />

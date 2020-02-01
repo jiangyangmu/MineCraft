@@ -4,18 +4,20 @@
 
 #include "Win32App.h"
 #include "D3DRenderer.h"
+#include "Camera.h"
 
 namespace render
 {
     class D3DApplication
     {
     public:
+
         D3DApplication(LPCWSTR lpTitle, HINSTANCE hInstance);
 
         // Operations
 
         // call before Initialize()
-        void            RegisterRenderer(ID3DRenderer * pRender);
+        void            RegisterRenderer(IRenderer * pRender);
         void            Initialize();
         virtual void    UpdateScene(double milliSeconds);
         virtual void    DrawScene();
@@ -24,12 +26,16 @@ namespace render
 
         win32::Window & GetWindow() { return m_mainWnd; }
 
-        // Event Handling
-        _RECV_EVENT_DECL(D3DApplication, OnWndIdle);
-        _RECV_EVENT_DECL1(D3DApplication, OnWndMove);
-        _RECV_EVENT_DECL1(D3DApplication, OnWndResize);
+        // Events
+
+        public: _SEND_EVENT(OnAspectRatioChange)
+
+        private: _RECV_EVENT_DECL(D3DApplication, OnWndIdle)
+        private: _RECV_EVENT_DECL1(D3DApplication, OnWndMove)
+        private: _RECV_EVENT_DECL1(D3DApplication, OnWndResize)
 
     private:
+
         // --------------------------------------------------------------------------
         // Internal methods
         // --------------------------------------------------------------------------
@@ -46,10 +52,11 @@ namespace render
         // Internal State
         // --------------------------------------------------------------------------
         win32::Window               m_mainWnd;
-        std::vector<ID3DRenderer*>  m_renders;
         LARGE_INTEGER               m_timerFrequence;
         LARGE_INTEGER               m_timerPreviousValue;
         double                      m_fps;
+
+        std::vector<IRenderer*>     m_renders;
 
         // --------------------------------------------------------------------------
         // DirectX 3D State

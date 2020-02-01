@@ -172,6 +172,7 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
     // Map win32 events to Window events
 
     WindowRect rect;
+    MouseEventArgs mouseEventArgs;
     switch (uMsg)
     {
         // Window events
@@ -276,6 +277,11 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
         
         case WM_MOUSEMOVE:
             {
+                mouseEventArgs.pixelX = GET_X_LPARAM(lParam);
+                mouseEventArgs.pixelY = GET_Y_LPARAM(lParam);
+                mouseEventArgs.flags = (DWORD)wParam;
+                _DISPATCH_EVENT1(OnMouseMove, *this, mouseEventArgs);
+
                 if (m_mouseInput)
                     m_mouseInput->OnMouseMove(GET_X_LPARAM(lParam),
                                               GET_Y_LPARAM(lParam),

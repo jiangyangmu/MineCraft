@@ -48,6 +48,10 @@
     <ClInclude Include="EventDefinitions.h">
       <Filter>Event</Filter>
     </ClInclude>
+    <ClInclude Include="Camera.h" />
+    <ClInclude Include="CameraRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -70,6 +74,10 @@
     <ClCompile Include="ErrorHandling.cpp">
       <Filter>Common</Filter>
     </ClCompile>
+    <ClCompile Include="CameraRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
+    <ClCompile Include="Camera.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">

@@ -16,6 +16,9 @@ namespace render
 D3DApplication::D3DApplication(LPCWSTR lpTitle, HINSTANCE hInstance)
     : m_mainWnd(lpTitle, hInstance)
 {
+    _BIND_EVENT(OnWndIdle, m_mainWnd, *this);
+    _BIND_EVENT(OnWndMove, m_mainWnd, *this);
+    _BIND_EVENT(OnWndResize, m_mainWnd, *this);
 }
 
 // Initialization
@@ -120,7 +123,7 @@ void D3DApplication::InitializeD3DDevice()
     m_d3dContext = d3dImmediateContext;
     m_SwapChain = dxgiSwapChain;
 }
-void D3DApplication::RegisterRenderer(ID3DRenderer * pRender)
+void D3DApplication::RegisterRenderer(IRenderer * pRender)
 {
     ENSURE_TRUE(
         pRender != nullptr &&
@@ -132,7 +135,7 @@ void D3DApplication::InitializeD3DPipelines()
 {
     float aspectRatio = m_mainWnd.GetAspectRatio();
     
-    for (ID3DGraphicsPipeline * pGP : m_renders)
+    for (ID3DPipelineModule * pGP : m_renders)
     {
         pGP->Initialize(m_d3dDevice, aspectRatio);
     }
@@ -156,14 +159,14 @@ void D3DApplication::ClearScreen()
 }
 void D3DApplication::UpdateScene(double milliSeconds)
 {
-    for (ID3DRenderer * pRender : m_renders)
+    for (IRenderer * pRender : m_renders)
     {
         pRender->Update(milliSeconds);
     }
 }
 void D3DApplication::DrawScene()
 {
-    for (ID3DGraphicsPipeline * pGP : m_renders)
+    for (ID3DPipelineModule * pGP : m_renders)
     {
         pGP->Draw(m_d3dContext);
     }
@@ -312,6 +315,9 @@ _RECV_EVENT_IMPL(D3DApplication, OnWndResize)
     UNREFERENCED_PARAMETER(sender);
 
     UpdateRenderTargets(rect.width, rect.height);
+
+    float aspectRatio = static_cast<float>(rect.width) / static_cast<float>(rect.height);
+    _DISPATCH_EVENT1(OnAspectRatioChange, *this, aspectRatio);
 }
 
 

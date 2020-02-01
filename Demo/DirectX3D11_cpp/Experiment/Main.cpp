@@ -6,6 +6,7 @@
 #include "D3DApp.h"
 #include "ErrorHandling.h"
 
+#include "CameraRenderer.h"
 #include "TriangleRenderer.h"
 #include "CubeRenderer.h"
 
@@ -123,19 +124,25 @@ int WINAPI wWinMain(
 
     keyboard->SetHWND(app->GetWindow().GetHWND());
     
-    render::TriangleRenderer tri;
-    render::CubeRenderer cube;
+    render::CameraRenderer      camera;
+    render::TriangleRenderer    tri;
+    render::CubeRenderer        cube;
+
+    app->RegisterRenderer(&camera);
     app->RegisterRenderer(&tri);
     app->RegisterRenderer(&cube);
 
+    _BIND_EVENT(OnAspectRatioChange, *app, camera.GetCamera());
+    _BIND_EVENT(OnMouseMove, app->GetWindow(), camera.GetCamera().GetController());
+
     app->Initialize();
-    app->GetWindow().SetKeyboardInput(keyboard);
-    app->GetWindow().SetMouseInput(mouse);
+    // app->GetWindow().SetKeyboardInput(keyboard);
+    // app->GetWindow().SetMouseInput(mouse);
     
-    win32::WindowEventDebug wed;
-    _BIND_EVENT(OnWndIdle, app->GetWindow(), wed);
-    _BIND_EVENT(OnWndMove, app->GetWindow(), wed);
-    _BIND_EVENT(OnWndResize, app->GetWindow(), wed);
+    //win32::WindowEventDebug wed;
+    //_BIND_EVENT(OnWndIdle, app->GetWindow(), wed);
+    //_BIND_EVENT(OnWndMove, app->GetWindow(), wed);
+    //_BIND_EVENT(OnWndResize, app->GetWindow(), wed);
 
     int ret             = win32::Application::Run(app->GetWindow());
     
