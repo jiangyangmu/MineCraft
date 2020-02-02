@@ -163,6 +163,7 @@
     <ClInclude Include="CameraRenderer.h" />
     <ClInclude Include="CubeRenderer.h" />
     <ClInclude Include="D3DApp.h" />
+    <ClInclude Include="D3DBuffer.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="ErrorHandling.h" />
     <ClInclude Include="D3DRenderer.h" />
@@ -179,6 +180,7 @@
     <ClCompile Include="CameraRenderer.cpp" />
     <ClCompile Include="CubeRenderer.cpp" />
     <ClCompile Include="D3DApp.cpp" />
+    <ClCompile Include="D3DBuffer.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="ErrorHandling.cpp" />
     <ClCompile Include="Main.cpp" />
@@ -217,6 +219,20 @@
     <None Include="TODO.md" />
   </ItemGroup>
   <ItemGroup>
+    <FxCompile Include="CubeVS.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">4.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">4.0</ShaderModel>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(OutDir)%(Filename).vso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(OutDir)%(Filename).vso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">$(OutDir)%(Filename).vso</ObjectFileOutput>
+      <ObjectFileOutput Condition="'$(Configuration)|$(Platform)'=='Release|x64'">$(OutDir)%(Filename).vso</ObjectFileOutput>
+    </FxCompile>
     <FxCompile Include="PixelShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Pixel</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">4.0</ShaderModel>

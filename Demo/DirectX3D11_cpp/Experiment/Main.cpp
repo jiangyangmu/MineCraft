@@ -12,50 +12,33 @@
 #include "SkyboxRenderer.h"
 
 using win32::ENSURE_TRUE;
+using render::D3DApplication;
 
-namespace win32
+struct Scene
 {
-    class WindowEventDebug
+    render::CameraRenderer      camera;
+    render::SkyboxRenderer      skybox;
+    render::CubeRenderer        cube;
+    render::TriangleRenderer    tri;
+};
+
+void BuildScene(Scene & scene, render::D3DApplication & app)
+{
+    for (int x = -5; x <= 5; ++x)
     {
-    public:
-        _RECV_EVENT(WindowEventDebug, OnWndIdle)
-            (void * sender)
+        for (int y = -5; y <= 5; ++y)
         {
-            Window *    pWindow = static_cast<Window *>(sender); // safe?
-
-            TCHAR       szTitle[128];
-            GetWindowText(pWindow->GetHWND(), szTitle, 128);
-
-            std::wostringstream ss;
-            ss << "Receive OnWndIdle from window: " << szTitle << std::endl;
-            OutputDebugString(ss.str().c_str());
-            Sleep(1);
+            scene.cube.AddCube((float)x * 2.0f, (float)y * 2.0f, 0.0f);
         }
-        _RECV_EVENT1(WindowEventDebug, OnWndMove)
-            (void * sender, const WindowRect & rect)
-        {
-            Window *    pWindow = static_cast<Window *>(sender); // safe?
+    }
 
-            TCHAR       szTitle[128];
-            GetWindowText(pWindow->GetHWND(), szTitle, 128);
+    app.RegisterRenderer(&scene.camera);
+    app.RegisterRenderer(&scene.skybox);
+    app.RegisterRenderer(&scene.cube);
+    // app.RegisterRenderer(&scene.tri);
 
-            std::wostringstream ss;
-            ss << "Receive OnWndMove from window: " << szTitle << " x: " << rect.x << " y: " << rect.y << std::endl;
-            OutputDebugString(ss.str().c_str());
-        }
-        _RECV_EVENT1(WindowEventDebug, OnWndResize)
-            (void * sender, const WindowRect & rect)
-        {
-            Window *    pWindow = static_cast<Window *>(sender); // safe?
-
-            TCHAR       szTitle[128];
-            GetWindowText(pWindow->GetHWND(), szTitle, 128);
-
-            std::wostringstream ss;
-            ss << "Receive OnWndResize from window: " << szTitle << " w: " << rect.width << " h: " << rect.height << std::endl;
-            OutputDebugString(ss.str().c_str());
-        }
-    };
+    _BIND_EVENT(OnAspectRatioChange,    app,                scene.camera.GetCamera());
+    _BIND_EVENT(OnMouseMove,            app.GetWindow(),    scene.camera.GetCamera().GetController());
 }
 
 int WINAPI wWinMain(
@@ -75,29 +58,13 @@ int WINAPI wWinMain(
 
     win32::InitializeCOM();
 
-    auto app    = render::D3DApplication(L"DX Demo", hInstance);
+    D3DApplication  app(L"DX Demo", hInstance);
+    Scene           scene;
 
-    render::CameraRenderer      camera;
-    render::SkyboxRenderer      skybox;
-    render::TriangleRenderer    tri;
-    render::CubeRenderer        cube;
-
-    app.RegisterRenderer(&camera);
-    app.RegisterRenderer(&skybox);
-    app.RegisterRenderer(&tri);
-    // app.RegisterRenderer(&cube);
-
-    _BIND_EVENT(OnAspectRatioChange,    app,                camera.GetCamera());
-    _BIND_EVENT(OnMouseMove,            app.GetWindow(),    camera.GetCamera().GetController());
-
+    BuildScene(scene, app);
     app.Initialize();
     
-    //win32::WindowEventDebug wed;
-    //_BIND_EVENT(OnWndIdle, app.GetWindow(), wed);
-    //_BIND_EVENT(OnWndMove, app.GetWindow(), wed);
-    //_BIND_EVENT(OnWndResize, app.GetWindow(), wed);
-
-    int ret             = win32::Application::Run(app.GetWindow());
+    int ret = win32::Application::Run(app.GetWindow());
     
     win32::UninitializeCOM();
 

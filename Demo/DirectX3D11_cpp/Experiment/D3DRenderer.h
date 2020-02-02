@@ -4,8 +4,11 @@
 
 namespace render
 {
+    // IA(vb, ib) + VS(cb, shader) + RS(viewport) + PS(texture, shader) + OM(render targets)
     interface ID3DPipelineModule
     {
+        virtual         ~ID3DPipelineModule() = default;
+
         // Create resources
         // * Buffers
         // * Textures

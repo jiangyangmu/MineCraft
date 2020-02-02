@@ -54,12 +54,12 @@ const DirectX::XMMATRIX & Camera::GetViewMatrix()
     XMVECTOR fwd = XMLoadFloat3(&m_forward);
     XMVECTOR pos = XMLoadFloat3(&m_pos);
 
-    m_viewMatrix = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z)
-        * XMMatrixRotationAxis(up, -m_hradian)
-        * XMMatrixTranslation(-m_pos.x, -m_pos.y, -m_pos.z)
-        * XMMatrixLookAtLH(pos, pos + fwd, up)
-        * XMMatrixRotationAxis(-fwd, -m_vradian)
-        ;
+    m_viewMatrix    = XMMatrixTranslation(m_pos.x, m_pos.y, m_pos.z)
+                    * XMMatrixRotationAxis(up, -m_hradian)
+                    * XMMatrixTranslation(-m_pos.x, -m_pos.y, -m_pos.z)
+                    * XMMatrixLookAtLH(pos, pos + fwd, up)
+                    * XMMatrixRotationAxis(-fwd, -m_vradian)
+                    ;
     return m_viewMatrix;
 }
 

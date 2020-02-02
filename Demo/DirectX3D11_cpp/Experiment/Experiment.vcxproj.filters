@@ -56,8 +56,9 @@
       <Filter>Renderer</Filter>
     </ClInclude>
     <ClInclude Include="DDSTextureLoader.h">
-      <Filter>Renderer</Filter>
+      <Filter>Misc</Filter>
     </ClInclude>
+    <ClInclude Include="D3DBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -88,8 +89,9 @@
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="DDSTextureLoader.cpp">
-      <Filter>Renderer</Filter>
+      <Filter>Misc</Filter>
     </ClCompile>
+    <ClCompile Include="D3DBuffer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
@@ -123,6 +125,9 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="SkyboxVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="CubeVS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>
