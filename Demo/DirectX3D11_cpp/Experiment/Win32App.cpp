@@ -170,6 +170,7 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
     WindowRect rect;
     MouseEventArgs mouseEventArgs;
+    KeyboardEventArgs keyboardEventArgs;
     switch (uMsg)
     {
         // Window events
@@ -228,11 +229,15 @@ LRESULT Window::ProcessMessage(UINT uMsg, WPARAM wParam, LPARAM lParam)
 
         case WM_KEYDOWN:
             {
+                keyboardEventArgs.virtualKeyCode = wParam;
+                _DISPATCH_EVENT1(OnKeyDown, *this, keyboardEventArgs);
             }
             return 0;
 
         case WM_KEYUP:
             {
+                keyboardEventArgs.virtualKeyCode = wParam;
+                _DISPATCH_EVENT1(OnKeyUp, *this, keyboardEventArgs);
             }
             return 0;
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "D3DRenderer.h"
+#include "D3DBuffer.h"
 #include "RendererUtil.h"
 
 namespace render
@@ -12,14 +13,14 @@ namespace render
         
         virtual void    Update(double milliSeconds) override;
         virtual void    Draw(ID3D11DeviceContext * d3dContext) override;
-
+        
     private:
         ID3D11Device *              m_d3dDevice;
         ID3D11DeviceContext *       m_d3dContext;
         
         ID3D11ShaderResourceView *  m_d3dCubeMapSRV;
 
-        ID3D11Buffer *              m_d3dVertexBuffer;
+        Ptr<D3DConstantVertexBuffer> m_vertexBuffer;
 
         ID3D11InputLayout *         m_d3dInputLayout;
         ID3D11VertexShader *        m_d3dVertexShader;

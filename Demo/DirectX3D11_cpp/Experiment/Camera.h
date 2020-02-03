@@ -10,13 +10,17 @@ namespace render
 {
     class Camera;
 
-    class CameraMouseController
+    class CameraController
     {
     public:
 
-        CameraMouseController(Camera * pCamera) : m_camera(pCamera) {}
+        CameraController(Camera * pCamera) : m_camera(pCamera) {}
 
-        public: _RECV_EVENT_DECL1(CameraMouseController, OnMouseMove);
+        void        Update(double milliSeconds);
+
+        public: _RECV_EVENT_DECL1(CameraController, OnMouseMove)
+        public: _RECV_EVENT_DECL1(CameraController, OnKeyDown)
+        public: _RECV_EVENT_DECL1(CameraController, OnKeyUp)
 
     private:
 
@@ -24,8 +28,15 @@ namespace render
         bool        m_init = true;
         int         m_pixelX = 0;
         int         m_pixelY = 0;
+
+        // look at
         float       m_hAngle = 0.0f;
         float       m_vAngle = -30.0f;
+
+        // move
+        const float m_speed = 30.0f;
+        float       m_forwardFactor = 0.0f;
+        float       m_rightFactor = 0.0f;
     };
 
     class Camera
@@ -47,6 +58,10 @@ namespace render
         {
         }
 
+        // Operations
+
+        void                            Move(const DirectX::XMFLOAT3 & delta);
+
         // Properties
         
         // Left: 0.0f, Right: 360.0f
@@ -55,15 +70,18 @@ namespace render
         void                            SetVerticalAngle(float fAngle);
         void                            SetAspectRatio(float fAspectRatio) { m_aspectRatio = fAspectRatio; }
 
+        const DirectX::XMFLOAT3 &       GetUp() { return m_up; }
+        const DirectX::XMFLOAT3 &       GetPos() { return m_pos; }
         const DirectX::XMFLOAT3         GetDirection();
         const DirectX::XMMATRIX &       GetViewMatrix();
         const DirectX::XMMATRIX &       GetProjMatrix();
 
-        CameraMouseController &         GetController() { return m_controller; }
+        CameraController &              GetController() { return m_controller; }
         
         // Events
 
         public: _SEND_EVENT(OnCameraDirChange)
+        public: _SEND_EVENT(OnCameraPosChange)
 
         public: _RECV_EVENT_DECL1(Camera, OnAspectRatioChange)
 
@@ -97,7 +115,7 @@ namespace render
         // --------------------------------------------------------------------------
         // Controllers
         // --------------------------------------------------------------------------
-        CameraMouseController       m_controller;
+        CameraController            m_controller;
     };
 
 }

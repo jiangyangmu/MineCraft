@@ -10,6 +10,7 @@
 #include "TriangleRenderer.h"
 #include "CubeRenderer.h"
 #include "SkyboxRenderer.h"
+#include "RayRenderer.h"
 
 using win32::ENSURE_TRUE;
 using render::D3DApplication;
@@ -17,6 +18,7 @@ using render::D3DApplication;
 struct Scene
 {
     render::CameraRenderer      camera;
+    render::RayRenderer         ray;
     render::SkyboxRenderer      skybox;
     render::CubeRenderer        cube;
     render::TriangleRenderer    tri;
@@ -33,12 +35,18 @@ void BuildScene(Scene & scene, render::D3DApplication & app)
     }
 
     app.RegisterRenderer(&scene.camera);
+    app.RegisterRenderer(&scene.ray);
     app.RegisterRenderer(&scene.skybox);
-    app.RegisterRenderer(&scene.cube);
+    // app.RegisterRenderer(&scene.cube);
     // app.RegisterRenderer(&scene.tri);
 
     _BIND_EVENT(OnAspectRatioChange,    app,                scene.camera.GetCamera());
     _BIND_EVENT(OnMouseMove,            app.GetWindow(),    scene.camera.GetCamera().GetController());
+    _BIND_EVENT(OnKeyDown,              app.GetWindow(),    scene.camera.GetCamera().GetController());
+    _BIND_EVENT(OnKeyUp,                app.GetWindow(),    scene.camera.GetCamera().GetController());
+
+    _BIND_EVENT(OnCameraDirChange,      scene.camera.GetCamera(),       scene.ray);
+    _BIND_EVENT(OnCameraPosChange,      scene.camera.GetCamera(),       scene.ray);
 }
 
 int WINAPI wWinMain(

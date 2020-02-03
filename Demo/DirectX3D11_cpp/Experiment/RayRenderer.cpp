@@ -1,7 +1,8 @@
 #include "pch.h"
 
-#include "TriangleRenderer.h"
+#include "RayRenderer.h"
 #include "ErrorHandling.h"
+#include "D3DBuffer.h"
 
 using namespace win32;
 using namespace dx;
@@ -9,7 +10,7 @@ using namespace dx;
 namespace render
 {
 
-void TriangleRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
+void RayRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 {
     UNREFERENCED_PARAMETER(aspectRatio);
 
@@ -19,28 +20,14 @@ void TriangleRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     float data[] =
     {
-          -1.0f, -1.0f, 0.0f, 1.0f,       1.0f, 0.0f, 0.0f, 1.0f,
-          -1.0f,  0.0f, 0.8f, 1.0f,       0.0f, 1.0f, 0.0f, 1.0f,
-          -1.0f,  1.0f, 0.0f, 1.0f,       0.0f, 0.0f, 1.0f, 1.0f,
+          0.0f,     0.0f, 0.0f, 1.0f,       1.0f, 1.0f, 1.0f, 1.0f,
+          m_length, m_length, m_length, 1.0f,       1.0f, 1.0f, 1.0f, 1.0f,
     };
-
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    vertexBufferDesc.Usage                  = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth              = sizeof(data);
-    vertexBufferDesc.BindFlags              = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags         = 0;
-    vertexBufferDesc.MiscFlags              = 0;
-    vertexBufferDesc.StructureByteStride    = 0;
-
-    D3D11_SUBRESOURCE_DATA vertexData;
-    vertexData.pSysMem                      = data;
-    vertexData.SysMemPitch                  = 0;
-    vertexData.SysMemSlicePitch             = 0;
-
-    ENSURE_OK(
-        m_d3dDevice->CreateBuffer(&vertexBufferDesc,
-                                  &vertexData,
-                                  &m_d3dVertexBuffer));
+    
+    m_vertexBuffer.reset(new D3DDynamicVertexBuffer(m_d3dDevice));
+    m_vertexBuffer->Resize(sizeof(float) * ARRAYSIZE(data));
+    
+    m_isDirty       = true;
 
     // Vertex shader
 
@@ -80,28 +67,73 @@ void TriangleRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
     // set by CameraRenderer
 }
 
-void TriangleRenderer::Update(double milliSeconds)
+void RayRenderer::Update(double milliSeconds)
 {
     UNREFERENCED_PARAMETER(milliSeconds);
 }
 
-void TriangleRenderer::Draw(ID3D11DeviceContext * d3dContext)
+void RayRenderer::Draw(ID3D11DeviceContext * d3dContext)
 {
     m_d3dContext = d3dContext;
-    
+
+    if (m_isDirty)
+    {
+        float data[] =
+        {
+            // X, Y, Z
+            0.0f, 0.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 0.0f, 1.0f,
+            100.0f, 0.0f, 0.0f, 1.0f,
+            1.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            0.0f, 100.0f, 0.0f, 1.0f,
+            0.0f, 1.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 0.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, 100.0f, 1.0f,
+            0.0f, 0.0f, 1.0f, 1.0f,
+            // Eye dir
+            m_pos.x, m_pos.y, m_pos.z, 1.0f,
+            1.0f, 1.0f, 0.0f, 1.0f,
+            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            1.0f, 1.0f, 0.0f, 1.0f,
+            // Eye dir assist
+            10.0f, 0.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 10.0f, 0.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            0.0f, 0.0f, 10.0f, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            1.0f, 1.0f, 1.0f, 1.0f,
+        };
+
+        (*m_vertexBuffer)
+            .Mutate()
+            .Begin(m_d3dContext)
+            .Fill(data, ARRAYSIZE(data));
+        m_isDirty = false;
+    }
+
     // Set IA stage
 
+    ID3D11Buffer * buffers = m_vertexBuffer->Get();
     UINT strides = sizeof(float) * 4 * 2;
     UINT offsets = 0;
     m_d3dContext->IASetVertexBuffers(0, // slot
                                      1, // number of buffers
-                                     &m_d3dVertexBuffer,
+                                     &buffers,
                                      &strides,
                                      &offsets);
-    
+
     m_d3dContext->IASetPrimitiveTopology(
-        D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-    
+        D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+
     m_d3dContext->IASetInputLayout(m_d3dInputLayout);
 
     // Set VS stage
@@ -117,7 +149,7 @@ void TriangleRenderer::Draw(ID3D11DeviceContext * d3dContext)
                               0);
 
     // Draw
-    m_d3dContext->Draw(3, 0);
+    m_d3dContext->Draw(28, 0);
 }
 
 }

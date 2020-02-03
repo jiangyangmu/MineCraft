@@ -10,6 +10,51 @@ using namespace dx;
 namespace render
 {
 
+static const float gCubeVertices[] =
+{
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+
+    -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+
+    -100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+
+     100.0f, -100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+};
+
 void SkyboxRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 {
     UNREFERENCED_PARAMETER(aspectRatio);
@@ -25,68 +70,9 @@ void SkyboxRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     // Vertex buffer
 
-    float data[] =
-    {
-          -100.0f, -100.0f, -100.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-          -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-           100.0f,  100.0f, -100.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-          -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-           100.0f,  100.0f, -100.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-           100.0f, -100.0f, -100.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-
-          -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-           100.0f,  100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
-          -100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-          -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-           100.0f, -100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
-           100.0f,  100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
-
-          -100.0f, 100.0f, -100.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f, 100.0f,  100.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-           100.0f, 100.0f,  100.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f, 100.0f, -100.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-           100.0f, 100.0f,  100.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-           100.0f, 100.0f, -100.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-
-          -100.0f,-100.0f, -100.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-           100.0f,-100.0f,  100.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
-          -100.0f,-100.0f,  100.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-          -100.0f,-100.0f, -100.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-           100.0f,-100.0f, -100.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
-           100.0f,-100.0f,  100.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
-
-          -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-          -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-
-           100.0f, -100.0f, -100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-           100.0f,  100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-           100.0f, -100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-           100.0f, -100.0f, -100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-           100.0f,  100.0f, -100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-           100.0f,  100.0f,  100.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    };
-
-    D3D11_BUFFER_DESC vertexBufferDesc;
-    vertexBufferDesc.Usage                  = D3D11_USAGE_DEFAULT;
-    vertexBufferDesc.ByteWidth              = sizeof(data);
-    vertexBufferDesc.BindFlags              = D3D11_BIND_VERTEX_BUFFER;
-    vertexBufferDesc.CPUAccessFlags         = 0;
-    vertexBufferDesc.MiscFlags              = 0;
-    vertexBufferDesc.StructureByteStride    = 0;
-
-    D3D11_SUBRESOURCE_DATA vertexData;
-    vertexData.pSysMem                      = data;
-    vertexData.SysMemPitch                  = 0;
-    vertexData.SysMemSlicePitch             = 0;
-
-    ENSURE_OK(
-        m_d3dDevice->CreateBuffer(&vertexBufferDesc,
-                                  &vertexData,
-                                  &m_d3dVertexBuffer));
+    m_vertexBuffer.reset(new D3DConstantVertexBuffer(m_d3dDevice));
+    m_vertexBuffer->Reset(gCubeVertices,
+                          sizeof(float) * ARRAYSIZE(gCubeVertices));
 
      // Vertex shader
 
@@ -175,11 +161,13 @@ void SkyboxRenderer::Draw(ID3D11DeviceContext * d3dContext)
 
     // Set IA stage
 
-    UINT strides = sizeof(float) * 4 * 2;
-    UINT offsets = 0;
+    ID3D11Buffer * buffers  = m_vertexBuffer->Get();
+    UINT strides            = sizeof(float) * 4 * 2;
+    UINT offsets            = 0;
+
     m_d3dContext->IASetVertexBuffers(0, // slot
                                      1, // number of buffers
-                                     &m_d3dVertexBuffer,
+                                     &buffers,
                                      &strides,
                                      &offsets);
 
@@ -213,7 +201,8 @@ void SkyboxRenderer::Draw(ID3D11DeviceContext * d3dContext)
 
     // Set OM stage
 
-    m_d3dContext->OMSetDepthStencilState(m_depthStencilState, 0);
+    m_d3dContext->OMSetDepthStencilState(m_depthStencilState,
+                                         0);
 
     // Draw
     m_d3dContext->Draw(36, 0);

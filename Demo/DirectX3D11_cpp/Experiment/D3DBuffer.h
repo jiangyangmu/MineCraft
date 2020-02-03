@@ -4,6 +4,28 @@
 
 namespace render
 {
+    class D3DConstantVertexBuffer
+    {
+    public:
+        D3DConstantVertexBuffer(ID3D11Device * pDevice);
+        ~D3DConstantVertexBuffer();
+
+        // Operations
+
+        void                    Reset(const void * pBytes, size_t nCount);
+
+        // Properties
+
+        ID3D11Buffer *          Get() { return m_d3dVertexBuffer; }
+
+    private:
+        ID3D11Device *          m_d3dDevice;
+        ID3D11Buffer *          m_d3dVertexBuffer;
+
+        size_t                  m_capacity;
+        size_t                  m_size;
+    };
+
     class D3DDynamicVertexBuffer
     {
     public:
@@ -17,7 +39,7 @@ namespace render
             ~Mutator();
 
             Mutator &               Begin(ID3D11DeviceContext * pContext);
-            Mutator &               FillBytes(const void * pObjects, size_t nCount);
+            Mutator &               FillBytes(const void * pBytes, size_t nCount);
             template <typename T>
             Mutator &               Fill(const T * pObjects, size_t nCount)
             {
@@ -42,6 +64,7 @@ namespace render
 
         // Operations
 
+        // resize and clear all data
         void                    Resize(size_t nBytes);
         Mutator                 Mutate();
 

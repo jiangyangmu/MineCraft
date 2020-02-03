@@ -1,6 +1,7 @@
 cbuffer cbPerObject
 {
     float4x4 mvp;
+    float4 cbPos;
 };
 
 struct VS_IN
@@ -11,16 +12,16 @@ struct VS_IN
 
 struct PS_IN
 {
-    float4 posH : SV_POSITION;
-    float4 posL : POSITION;
+    float4 pixPos : SV_POSITION;
+    float4 texPos : POSITION;
 };
 
 PS_IN main(VS_IN input)
 {
     PS_IN output;
 
-    output.posH = mul(input.pos, mvp).xyww;
-    output.posL = input.pos;
+    output.pixPos = mul(input.pos + cbPos, mvp).xyww;
+    output.texPos = input.pos;
 
     return output;
 }

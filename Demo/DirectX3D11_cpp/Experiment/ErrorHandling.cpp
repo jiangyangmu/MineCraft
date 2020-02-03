@@ -276,7 +276,7 @@ namespace win32
         }
     }
 
-    void ENSURE_NOT_NULL(void * pv)
+    void ENSURE_NOT_NULL(const void * pv)
     {
         if (pv == NULL)
         {

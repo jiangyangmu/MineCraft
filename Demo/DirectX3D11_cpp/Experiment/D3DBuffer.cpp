@@ -49,13 +49,13 @@ Mutator & Mutator::Begin(ID3D11DeviceContext * pContext)
     return *this;
 }
 
-Mutator & Mutator::FillBytes(const void * pObjects, size_t nBytes)
+Mutator & Mutator::FillBytes(const void * pBytes, size_t nBytes)
 {
     ENSURE_NOT_NULL(pD3DContext);
     ENSURE_NOT_NULL(pData);
     ENSURE_TRUE(nBytes <= (nSize - nOffset));
 
-    CopyMemory(pData + nOffset, pObjects, nBytes);
+    CopyMemory(pData + nOffset, pBytes, nBytes);
     nOffset += nBytes;
 
     return *this;
@@ -80,7 +80,7 @@ D3DDynamicVertexBuffer::~D3DDynamicVertexBuffer()
 void D3DDynamicVertexBuffer::Resize(size_t nBytes)
 {
     // round up to 1MB aligned
-    nBytes = (nBytes & 0xffff) ? ((nBytes & ~0xfffff) + 0x100000) : (nBytes & ~0xfffff);
+    nBytes = (nBytes & 0xfffff) ? ((nBytes & ~0xfffff) + 0x100000) : (nBytes & ~0xfffff);
 
     if (m_capacity < nBytes)
     {
@@ -111,6 +111,56 @@ D3DDynamicVertexBuffer::Mutator D3DDynamicVertexBuffer::Mutate()
     ENSURE_NOT_NULL(m_d3dVertexBuffer);
 
     return Mutator(m_d3dVertexBuffer, m_capacity);
+}
+
+
+D3DConstantVertexBuffer::D3DConstantVertexBuffer(ID3D11Device * pDevice)
+    : m_d3dDevice(pDevice)
+    , m_d3dVertexBuffer(nullptr)
+    , m_capacity(0)
+    , m_size(0)
+{
+}
+
+D3DConstantVertexBuffer::~D3DConstantVertexBuffer()
+{
+    if (m_d3dVertexBuffer)
+    {
+        m_d3dVertexBuffer->Release();
+    }
+}
+
+void D3DConstantVertexBuffer::Reset(const void * pBytes, size_t nBytes)
+{
+    ENSURE_NOT_NULL(pBytes);
+
+    // round up to 4KB aligned
+    m_capacity  = (nBytes & 0xfff) ? ((nBytes & ~0xfff) + 0x1000) : (nBytes & ~0xfff);
+    
+    m_size      = nBytes;
+
+    if (m_d3dVertexBuffer)
+    {
+        m_d3dVertexBuffer->Release();
+    }
+
+    D3D11_BUFFER_DESC vertexBufferDesc;
+    vertexBufferDesc.Usage                  = D3D11_USAGE_DEFAULT;
+    vertexBufferDesc.ByteWidth              = nBytes;
+    vertexBufferDesc.BindFlags              = D3D11_BIND_VERTEX_BUFFER;
+    vertexBufferDesc.CPUAccessFlags         = 0;
+    vertexBufferDesc.MiscFlags              = 0;
+    vertexBufferDesc.StructureByteStride    = 0;
+
+    D3D11_SUBRESOURCE_DATA vertexData;
+    vertexData.pSysMem                      = pBytes;
+    vertexData.SysMemPitch                  = 0;
+    vertexData.SysMemSlicePitch             = 0;
+
+    dx::THROW_IF_FAILED(
+        m_d3dDevice->CreateBuffer(&vertexBufferDesc,
+                                  &vertexData,
+                                  &m_d3dVertexBuffer));
 }
 
 }

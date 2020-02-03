@@ -170,6 +170,7 @@
     <ClInclude Include="Event.h" />
     <ClInclude Include="EventDefinitions.h" />
     <ClInclude Include="pch.h" />
+    <ClInclude Include="RayRenderer.h" />
     <ClInclude Include="RendererUtil.h" />
     <ClInclude Include="SkyboxRenderer.h" />
     <ClInclude Include="TriangleRenderer.h" />
@@ -190,6 +191,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RayRenderer.cpp" />
     <ClCompile Include="RendererUtil.cpp" />
     <ClCompile Include="SkyboxRenderer.cpp" />
     <ClCompile Include="TriangleRenderer.cpp" />

@@ -24,13 +24,15 @@ namespace render
         struct ConstantBufferStruct
         {
             DirectX::XMFLOAT4X4 mvp;
+            DirectX::XMFLOAT4   pos;
         };
-
-        Camera                      m_camera;
 
         ID3D11Device *              m_d3dDevice;
         ID3D11DeviceContext *       m_d3dContext;
+
         ID3D11Buffer *              m_d3dConstantBuffer;
         ConstantBufferStruct        m_constantBufferData;
+        
+        Camera                      m_camera;
     };
 }

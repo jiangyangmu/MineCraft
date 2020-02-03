@@ -34,6 +34,8 @@ namespace win32
         public: _SEND_EVENT(OnWndMove)
         public: _SEND_EVENT(OnWndResize)
         public: _SEND_EVENT(OnMouseMove)
+        public: _SEND_EVENT(OnKeyDown)
+        public: _SEND_EVENT(OnKeyUp)
 
     private:
         // Win32 interfaces

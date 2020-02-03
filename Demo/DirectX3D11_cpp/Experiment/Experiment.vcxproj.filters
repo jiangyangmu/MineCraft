@@ -20,6 +20,12 @@
     <Filter Include="Event">
       <UniqueIdentifier>{e5755e4f-8625-4fbd-afcd-764e355b2ee9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{8623add5-5d92-4317-84a1-36f6e69ddab4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX">
+      <UniqueIdentifier>{8166fdb1-3892-4e2a-b6e7-cce435d4dcdc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -35,7 +41,6 @@
     <ClInclude Include="CubeRenderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="D3DRenderer.h" />
     <ClInclude Include="RendererUtil.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -48,7 +53,6 @@
     <ClInclude Include="EventDefinitions.h">
       <Filter>Event</Filter>
     </ClInclude>
-    <ClInclude Include="Camera.h" />
     <ClInclude Include="CameraRenderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -58,7 +62,18 @@
     <ClInclude Include="DDSTextureLoader.h">
       <Filter>Misc</Filter>
     </ClInclude>
-    <ClInclude Include="D3DBuffer.h" />
+    <ClInclude Include="D3DRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Camera.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="D3DBuffer.h">
+      <Filter>DX</Filter>
+    </ClInclude>
+    <ClInclude Include="RayRenderer.h">
+      <Filter>Renderer</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp">
@@ -84,14 +99,21 @@
     <ClCompile Include="CameraRenderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="SkyboxRenderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
     <ClCompile Include="DDSTextureLoader.cpp">
       <Filter>Misc</Filter>
     </ClCompile>
-    <ClCompile Include="D3DBuffer.cpp" />
+    <ClCompile Include="Camera.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="D3DBuffer.cpp">
+      <Filter>DX</Filter>
+    </ClCompile>
+    <ClCompile Include="RayRenderer.cpp">
+      <Filter>Renderer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">

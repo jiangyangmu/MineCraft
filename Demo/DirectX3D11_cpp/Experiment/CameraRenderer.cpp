@@ -16,14 +16,6 @@ void CameraRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     // Constant buffer
 
-    DirectX::XMStoreFloat4x4(
-        &m_constantBufferData.mvp,
-        DirectX::XMMatrixTranspose(
-            DirectX::XMMatrixMultiply(
-                m_camera.GetViewMatrix(),
-                m_camera.GetProjMatrix()
-            )));
-
     CD3D11_BUFFER_DESC constantBufferDesc(
         sizeof(ConstantBufferStruct),
         D3D11_BIND_CONSTANT_BUFFER
@@ -38,6 +30,8 @@ void CameraRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 void CameraRenderer::Update(double milliSeconds)
 {
     UNREFERENCED_PARAMETER(milliSeconds);
+
+    m_camera.GetController().Update(milliSeconds);
 }
 
 void CameraRenderer::Draw(ID3D11DeviceContext * d3dContext)
@@ -51,6 +45,13 @@ void CameraRenderer::Draw(ID3D11DeviceContext * d3dContext)
                 m_camera.GetViewMatrix(),
                 m_camera.GetProjMatrix()
             )));
+    m_constantBufferData.pos =
+    {
+        m_camera.GetPos().x,
+        m_camera.GetPos().y,
+        m_camera.GetPos().z,
+        0.0f
+    };
 
     // Update constant buffer
 

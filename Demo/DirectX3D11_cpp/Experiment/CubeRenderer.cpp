@@ -11,33 +11,33 @@ namespace render
 
 static const float gCubeVertices[] =
 {
-    -1.0f, -1.0f, -1.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    1.0f,  1.0f, -1.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
     -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    1.0f,  1.0f, -1.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
-    1.0f, -1.0f, -1.0f, 1.0f   ,  1.0f, 0.0f, 0.0f, 1.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
 
     -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    1.0f,  1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
     -1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
     -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    1.0f, -1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
-    1.0f,  1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
 
-    -1.0f, 1.0f, -1.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f,  1.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,  1.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f, 1.0f, -1.0f,  1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    1.0f, 1.0f,  1.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-    1.0f, 1.0f, -1.0f,  1.0f   ,  0.0f, 0.0f, 1.0f, 1.0f,
-
-    -1.0f,-1.0f, -1.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    1.0f,-1.0f,  1.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f,-1.0f,  1.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f,-1.0f, -1.0f,  1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    1.0f,-1.0f, -1.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
-    1.0f,-1.0f,  1.0f,  1.0f   ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+           
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
 
     -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
     -1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
@@ -45,22 +45,14 @@ static const float gCubeVertices[] =
     -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
     -1.0f,  1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
     -1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-
-    1.0f, -1.0f, -1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    1.0f,  1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    1.0f, -1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    1.0f, -1.0f, -1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    1.0f,  1.0f, -1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
-    1.0f,  1.0f,  1.0f, 1.0f   ,  0.0f, 1.0f, 1.0f, 1.0f,
+                         
+     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
 };
-
-CubeRenderer::~CubeRenderer()
-{
-    if (m_vertexBuffer)
-    {
-        delete m_vertexBuffer;
-    }
-}
 
 void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 {
@@ -70,10 +62,11 @@ void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     // Vertex buffer
 
-    m_vertexBuffer      = new D3DDynamicVertexBuffer(m_d3dDevice);
-    m_vertexBuffer->Resize(sizeof(float) * ARRAYSIZE(gCubeVertices));
+    m_vertexBuffer.reset(new D3DConstantVertexBuffer(m_d3dDevice));
+    m_vertexBuffer->Reset(gCubeVertices,
+                          sizeof(float) * ARRAYSIZE(gCubeVertices));
     
-    m_instanceBuffer    = new D3DDynamicVertexBuffer(m_d3dDevice);
+    m_instanceBuffer.reset(new D3DDynamicVertexBuffer(m_d3dDevice));
     m_instanceBuffer->Resize(1); // auto align to 1M
     
     m_isDirty           = true;
@@ -146,11 +139,6 @@ void CubeRenderer::Draw(ID3D11DeviceContext * d3dContext)
 
     if (m_isDirty)
     {
-        (*m_vertexBuffer)
-            .Mutate()
-            .Begin(m_d3dContext)
-            .Fill(gCubeVertices, sizeof(float) * ARRAYSIZE(gCubeVertices));
-
         m_instanceBuffer->Resize(sizeof(m_cubes[0]) * m_cubes.size());
         (*m_instanceBuffer)
             .Mutate()
