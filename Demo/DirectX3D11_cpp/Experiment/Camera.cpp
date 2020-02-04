@@ -116,7 +116,7 @@ void CameraController::Update(double milliSeconds)
     // HACK: assume up is unit Z
     ENSURE_TRUE(m_camera->GetUp().z == 1.0f);
 
-    XMFLOAT3 fwd, right;
+    XMFLOAT3 fwd, right, up;
     
     fwd = m_camera->GetDirection();
     fwd.z = 0.0f;
@@ -135,16 +135,18 @@ void CameraController::Update(double milliSeconds)
         &right,
         XMVector3Normalize(XMLoadFloat3(&right)));
 
+    up = m_camera->GetUp();
+
     float duration = static_cast<float>(milliSeconds / 1000.0f);
 
     XMFLOAT3 delta =
     {
         (m_forwardFactor * fwd.x + m_rightFactor * right.x) * duration * m_speed,
         (m_forwardFactor * fwd.y + m_rightFactor * right.y) * duration * m_speed,
-        (m_forwardFactor * fwd.z + m_rightFactor * right.z) * duration * m_speed,
+        (m_upFactor * up.z) * duration * m_speed,
     };
 
-    if (m_forwardFactor != 0.0f || m_rightFactor != 0.0f)
+    if (m_forwardFactor != 0.0f || m_rightFactor != 0.0f || m_upFactor != 0.0f)
     {
         m_camera->Move(delta);
     }
@@ -183,6 +185,8 @@ _RECV_EVENT_IMPL(CameraController, OnKeyDown)
         case 'S': m_forwardFactor = -1.0f; break;
         case 'A': m_rightFactor = -1.0f; break;
         case 'D': m_rightFactor = 1.0f; break;
+        case 'Q': m_upFactor = -1.0f; break;
+        case 'E': m_upFactor = 1.0f; break;
         default: break;
     }
 }
@@ -198,6 +202,8 @@ _RECV_EVENT_IMPL(CameraController, OnKeyUp)
         case 'S': m_forwardFactor = 0.0f; break;
         case 'A':
         case 'D': m_rightFactor = 0.0f; break;
+        case 'Q':
+        case 'E': m_upFactor = 0.0f; break;
         default: break;
     }
 }

@@ -2,6 +2,7 @@
 
 #include "CubeRenderer.h"
 #include "ErrorHandling.h"
+#include "DDSTextureLoader.h"
 
 using namespace win32;
 using namespace dx;
@@ -11,47 +12,53 @@ namespace render
 
 static const float gCubeVertices[] =
 {
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+    // up
+    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 0.0f,
 
-    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+    // down
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 0.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 0.0f,
 
-    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-           
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    // front
+     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 0.0f, 0.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
 
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f, -1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f, -1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f,  1.0f,  1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -1.0f,  1.0f, -1.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-                         
-     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
-     1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
-     1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
-     1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
-     1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 1.0f, 1.0f, 1.0f,
+    // back
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+
+    // right
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+    -1.0f,  1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+     1.0f,  1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+     1.0f,  1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+
+    // left
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f,  1.0f, 1.0f  ,  0.0f, 0.0f, 0.0f, 0.0f,
+    -1.0f, -1.0f, -1.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 0.0f,
+     1.0f, -1.0f, -1.0f, 1.0f  ,  0.5f, 1.0f, 0.0f, 0.0f,
+     1.0f, -1.0f,  1.0f, 1.0f  ,  0.5f, 0.0f, 0.0f, 0.0f,
 };
 
 void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
@@ -85,9 +92,9 @@ void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     D3D11_INPUT_ELEMENT_DESC inputElementDescs[] =
     {
-        { "POSITION",  0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA,   0 },
-        { "COLOR",     0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA,   0 },
-        { "TEXCOORD",  1, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,  0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+        { "POSITION",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+        { "TEXCOORD",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+        { "TRANSLATION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,  0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
     };
     ENSURE_OK(
         m_d3dDevice->CreateInputLayout(inputElementDescs,
@@ -98,7 +105,7 @@ void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     // Pixel shader
 
-    LoadCompiledShaderFromFile(TEXT("..\\Debug\\PixelShader.pso"), &m_pixelShaderByteCode);
+    LoadCompiledShaderFromFile(TEXT("..\\Debug\\CubePS.pso"), &m_pixelShaderByteCode);
 
     ENSURE_OK(
         m_d3dDevice->CreatePixelShader(m_pixelShaderByteCode.pBytes,
@@ -106,25 +113,40 @@ void CubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
                                        nullptr,
                                        &m_d3dPixelShader));
 
+    THROW_IF_FAILED(
+        DirectX::CreateDDSTextureFromFile(m_d3dDevice,
+                                          TEXT("Grass.dds"),
+                                          nullptr,
+                                          &m_d3dTextureSRV));
+
     // Constant buffer
     // set by CameraRenderer
 
     // States
 
-    D3D11_RASTERIZER_DESC noCullingRSDesc;
-    noCullingRSDesc.FillMode = D3D11_FILL_WIREFRAME;
-    noCullingRSDesc.CullMode = D3D11_CULL_NONE;
-    noCullingRSDesc.FrontCounterClockwise = FALSE;
-    noCullingRSDesc.DepthBias = 0;
-    noCullingRSDesc.SlopeScaledDepthBias = 0.0f;
-    noCullingRSDesc.DepthClipEnable = TRUE;
-    noCullingRSDesc.ScissorEnable = FALSE;
-    noCullingRSDesc.MultisampleEnable = FALSE;
-    noCullingRSDesc.AntialiasedLineEnable = FALSE;
-
+    D3D11_RASTERIZER_DESC defaultRSDesc =
+        CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
     ENSURE_OK(
-        m_d3dDevice->CreateRasterizerState(&noCullingRSDesc,
-                                           &m_rasterizerState));
+        m_d3dDevice->CreateRasterizerState(&defaultRSDesc,
+                                           &m_defaultRS));
+    D3D11_RASTERIZER_DESC lineRSDesc =
+        CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+    lineRSDesc.FillMode = D3D11_FILL_WIREFRAME;
+    ENSURE_OK(
+        m_d3dDevice->CreateRasterizerState(&lineRSDesc,
+                                           &m_lineRS));
+
+    D3D11_SAMPLER_DESC defaultSSDesc =
+        CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
+    ENSURE_OK(
+        m_d3dDevice->CreateSamplerState(&defaultSSDesc,
+                                        &m_samplerState));
+
+    D3D11_DEPTH_STENCIL_DESC defaultDSDesc =
+        CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
+    ENSURE_OK(
+        m_d3dDevice->CreateDepthStencilState(&defaultDSDesc,
+                                             &m_depthStencilState));
 
 }
 
@@ -139,11 +161,25 @@ void CubeRenderer::Draw(ID3D11DeviceContext * d3dContext)
 
     if (m_isDirty)
     {
-        m_instanceBuffer->Resize(sizeof(m_cubes[0]) * m_cubes.size());
-        (*m_instanceBuffer)
-            .Mutate()
-            .Begin(m_d3dContext)
-            .Fill(m_cubes.data(), m_cubes.size());
+        size_t nSize = 0;
+        for (int i = 0; i < MAX_TYPE; ++i)
+        {
+            nSize += m_cubes[i].size();
+        }
+
+        m_instanceBuffer->Resize(
+            sizeof(m_cubes[0]) * nSize);
+        
+        auto mutator =
+            m_instanceBuffer->Mutate().Begin(m_d3dContext);
+
+        for (int i = 0; i < MAX_TYPE; ++i)
+        {
+            mutator.Fill(
+                m_cubes[i].data(),
+                m_cubes[i].size());
+        }
+
         m_isDirty = false;
     }
 
@@ -175,22 +211,50 @@ void CubeRenderer::Draw(ID3D11DeviceContext * d3dContext)
     m_d3dContext->PSSetShader(m_d3dPixelShader,
                               nullptr,
                               0);
+    m_d3dContext->PSSetSamplers(0,
+                                1,
+                                &m_samplerState);
+    m_d3dContext->PSSetShaderResources(0,
+                                       1,
+                                       &m_d3dTextureSRV);
 
     // Set RS stage
 
-    m_d3dContext->RSSetState(m_rasterizerState);
+    m_d3dContext->RSSetState(m_defaultRS);
+    
+    // Set OM stage
 
+    m_d3dContext->OMSetDepthStencilState(m_depthStencilState,
+                                         0);
     // Draw
-    // m_d3dContext->Draw(36, 0);
-    m_d3dContext->DrawInstanced(36,             // vertex count
-                                m_cubes.size(), // instance count
-                                0,              // vertex start
-                                0);             // instance start
+
+    size_t offset = 0;
+    size_t size;
+    if ((size = m_cubes[LINE].size()) != 0)
+    {
+        m_d3dContext->IASetPrimitiveTopology(
+            D3D11_PRIMITIVE_TOPOLOGY_LINELIST);
+        m_d3dContext->DrawInstanced(36,
+                                    size,
+                                    0,
+                                    offset);
+        offset += size;
+    }
+    if ((size = m_cubes[TEXTURE].size()) != 0)
+    {
+        m_d3dContext->IASetPrimitiveTopology(
+            D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_d3dContext->DrawInstanced(36,
+                                    size,
+                                    0,
+                                    offset);
+        offset += size;
+    }
 }
 
-void CubeRenderer::AddCube(float x, float y, float z)
+void CubeRenderer::AddCube(float x, float y, float z, Type type)
 {
-    m_cubes.emplace_back(x, y, z, 0.0f);
+    m_cubes[type].emplace_back(x, y, z, 0.0f);
     
     m_isDirty = true;
 }

@@ -3,57 +3,66 @@
 #include "SkyboxRenderer.h"
 #include "ErrorHandling.h"
 #include "DDSTextureLoader.h"
+#include "Sphere.h"
 
 using namespace win32;
 using namespace dx;
+using namespace DirectX;
+
+// #define SKYBOX_USE_SPHERE
 
 namespace render
 {
 
+#ifndef SKYBOX_USE_SPHERE
+
+constexpr float gN = 0.577350269f; // 1 / sqrt(3)
 static const float gCubeVertices[] =
 {
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
-     100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 0.0f, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f,     gN, -gN, -gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f,     gN, -gN,  gN, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f,     gN, -gN, -gN, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f,     gN,  gN, -gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
 
-    -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    -100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-    -100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     100.0f, -100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f,    -gN, -gN,  gN, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f,    -gN,  gN,  gN, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f,    -gN,  gN,  gN, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f,    -gN,  gN, -gN, 1.0f,
 
-    -100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
-     100.0f,  100.0f, -100.0f, 1.0f  ,  0.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f,    -gN,  gN, -gN, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f,    -gN,  gN,  gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f,    -gN,  gN, -gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f,     gN,  gN, -gN, 1.0f,
 
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
-     100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 1.0f, 0.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f,     gN, -gN,  gN, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f,    -gN, -gN,  gN, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f,     gN, -gN, -gN, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f,     gN, -gN,  gN, 1.0f,
 
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f, -100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f, -100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f,  100.0f,  100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
-    -100.0f,  100.0f, -100.0f, 1.0f  ,  1.0f, 0.0f, 1.0f, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f,    -gN, -gN,  gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
+    -100.0f,  100.0f,  100.0f, 1.0f,    -gN,  gN,  gN, 1.0f,
+    -100.0f, -100.0f,  100.0f, 1.0f,    -gN, -gN,  gN, 1.0f,
+     100.0f, -100.0f,  100.0f, 1.0f,     gN, -gN,  gN, 1.0f,
+     100.0f,  100.0f,  100.0f, 1.0f,     gN,  gN,  gN, 1.0f,
 
-     100.0f, -100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
-     100.0f, -100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
-     100.0f, -100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
-     100.0f,  100.0f, -100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
-     100.0f,  100.0f,  100.0f, 1.0f ,  0.0f, 1.0f, 1.0f, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+    -100.0f,  100.0f, -100.0f, 1.0f,    -gN,  gN, -gN, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f,     gN,  gN, -gN, 1.0f,
+    -100.0f, -100.0f, -100.0f, 1.0f,    -gN, -gN, -gN, 1.0f,
+     100.0f,  100.0f, -100.0f, 1.0f,     gN,  gN, -gN, 1.0f,
+     100.0f, -100.0f, -100.0f, 1.0f,     gN, -gN, -gN, 1.0f,
 };
+
+#endif
 
 void SkyboxRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 {
@@ -64,15 +73,28 @@ void SkyboxRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
     // Cube map
     THROW_IF_FAILED(
         DirectX::CreateDDSTextureFromFile(m_d3dDevice,
-                                          TEXT("Skybox.dds"),
+                                          TEXT("Skybox_blue.dds"),
                                           nullptr,
                                           &m_d3dCubeMapSRV));
 
     // Vertex buffer
 
+#ifndef SKYBOX_USE_SPHERE
     m_vertexBuffer.reset(new D3DConstantVertexBuffer(m_d3dDevice));
     m_vertexBuffer->Reset(gCubeVertices,
                           sizeof(float) * ARRAYSIZE(gCubeVertices));
+#else
+    Sphere sphere;
+    CreateSphere(100.0f, 10, &sphere);
+
+    m_vertexBuffer.reset(new D3DConstantVertexBuffer(m_d3dDevice));
+    m_vertexBuffer->Reset(sphere.vertices.data(),
+                          sizeof(sphere.vertices[0]) * sphere.vertices.size());
+    m_indexBuffer.reset(new D3DConstantIndexBuffer(m_d3dDevice));
+    m_indexBuffer->Reset(sphere.indices.data(),
+                         sizeof(sphere.indices[0]) * sphere.indices.size());
+    m_indexSize = sphere.indices.size();
+#endif
 
      // Vertex shader
 
@@ -88,8 +110,8 @@ void SkyboxRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
 
     D3D11_INPUT_ELEMENT_DESC inputElementDescs[] =
     {
-        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
-        { "COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA, 0 },
+        { "NORMAL",   0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA, 0 },
     };
     ENSURE_OK(
         m_d3dDevice->CreateInputLayout(inputElementDescs,
@@ -171,6 +193,12 @@ void SkyboxRenderer::Draw(ID3D11DeviceContext * d3dContext)
                                      &strides,
                                      &offsets);
 
+#ifdef SKYBOX_USE_SPHERE
+    m_d3dContext->IASetIndexBuffer(m_indexBuffer->Get(),
+                                   DXGI_FORMAT_R32_UINT,
+                                   0);
+#endif
+
     m_d3dContext->IASetPrimitiveTopology(
         D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
@@ -205,7 +233,11 @@ void SkyboxRenderer::Draw(ID3D11DeviceContext * d3dContext)
                                          0);
 
     // Draw
+#ifndef SKYBOX_USE_SPHERE
     m_d3dContext->Draw(36, 0);
+#else
+    m_d3dContext->DrawIndexed(m_indexSize, 0, 0);
+#endif
 }
 
 }

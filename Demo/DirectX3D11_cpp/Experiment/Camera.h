@@ -37,6 +37,7 @@ namespace render
         const float m_speed = 30.0f;
         float       m_forwardFactor = 0.0f;
         float       m_rightFactor = 0.0f;
+        float       m_upFactor = 0.0f;
     };
 
     class Camera

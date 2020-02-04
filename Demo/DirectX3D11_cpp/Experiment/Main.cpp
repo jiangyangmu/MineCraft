@@ -30,14 +30,15 @@ void BuildScene(Scene & scene, render::D3DApplication & app)
     {
         for (int y = -5; y <= 5; ++y)
         {
-            scene.cube.AddCube((float)x * 2.0f, (float)y * 2.0f, 0.0f);
+            scene.cube.AddCube((float)x * 2.0f, (float)y * 2.0f, 0.0f,
+                               render::CubeRenderer::TEXTURE);
         }
     }
 
     app.RegisterRenderer(&scene.camera);
     app.RegisterRenderer(&scene.ray);
     app.RegisterRenderer(&scene.skybox);
-    // app.RegisterRenderer(&scene.cube);
+    app.RegisterRenderer(&scene.cube);
     // app.RegisterRenderer(&scene.tri);
 
     _BIND_EVENT(OnAspectRatioChange,    app,                scene.camera.GetCamera());
@@ -72,7 +73,8 @@ int WINAPI wWinMain(
     BuildScene(scene, app);
     app.Initialize();
     
-    int ret = win32::Application::Run(app.GetWindow());
+    int             ret =
+    win32::Application::Run(app.GetWindow());
     
     win32::UninitializeCOM();
 

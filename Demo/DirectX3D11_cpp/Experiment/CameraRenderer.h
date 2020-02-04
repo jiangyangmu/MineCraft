@@ -10,7 +10,7 @@ namespace render
     {
     public:
         CameraRenderer()
-            : m_camera(60.0f, 1.0f, {0.0f, 0.0f, 5.0f})
+            : m_camera(50.0f, 1.0f, {0.0f, 0.0f, 5.0f})
         {}
 
         virtual void    Initialize(ID3D11Device * d3dDevice, float aspectRatio) override;

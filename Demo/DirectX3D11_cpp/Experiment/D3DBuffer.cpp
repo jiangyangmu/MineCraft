@@ -163,4 +163,53 @@ void D3DConstantVertexBuffer::Reset(const void * pBytes, size_t nBytes)
                                   &m_d3dVertexBuffer));
 }
 
+D3DConstantIndexBuffer::D3DConstantIndexBuffer(ID3D11Device * pDevice)
+    : m_d3dDevice(pDevice)
+    , m_d3dIndexBuffer(nullptr)
+    , m_capacity(0)
+    , m_size(0)
+{
+}
+
+D3DConstantIndexBuffer::~D3DConstantIndexBuffer()
+{
+    if (m_d3dIndexBuffer)
+    {
+        m_d3dIndexBuffer->Release();
+    }
+}
+
+void D3DConstantIndexBuffer::Reset(const void * pBytes, size_t nBytes)
+{
+    ENSURE_NOT_NULL(pBytes);
+
+    // round up to 4KB aligned
+    m_capacity  = (nBytes & 0xfff) ? ((nBytes & ~0xfff) + 0x1000) : (nBytes & ~0xfff);
+    
+    m_size      = nBytes;
+
+    if (m_d3dIndexBuffer)
+    {
+        m_d3dIndexBuffer->Release();
+    }
+
+    D3D11_BUFFER_DESC indexBufferDesc;
+    indexBufferDesc.Usage                   = D3D11_USAGE_DEFAULT;
+    indexBufferDesc.ByteWidth               = nBytes;
+    indexBufferDesc.BindFlags               = D3D11_BIND_INDEX_BUFFER;
+    indexBufferDesc.CPUAccessFlags          = 0;
+    indexBufferDesc.MiscFlags               = 0;
+    indexBufferDesc.StructureByteStride     = 0;
+
+    D3D11_SUBRESOURCE_DATA indexData;
+    indexData.pSysMem                       = pBytes;
+    indexData.SysMemPitch                   = 0;
+    indexData.SysMemSlicePitch              = 0;
+
+    dx::THROW_IF_FAILED(
+        m_d3dDevice->CreateBuffer(&indexBufferDesc,
+                                  &indexData,
+                                  &m_d3dIndexBuffer));
+}
+
 }

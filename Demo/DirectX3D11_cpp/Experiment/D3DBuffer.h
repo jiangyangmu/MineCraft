@@ -12,7 +12,7 @@ namespace render
 
         // Operations
 
-        void                    Reset(const void * pBytes, size_t nCount);
+        void                    Reset(const void * pBytes, size_t nBytes);
 
         // Properties
 
@@ -78,5 +78,27 @@ namespace render
         ID3D11Buffer *          m_d3dVertexBuffer;
 
         size_t                  m_capacity;
+    };
+
+    class D3DConstantIndexBuffer
+    {
+    public:
+        D3DConstantIndexBuffer(ID3D11Device * pDevice);
+        ~D3DConstantIndexBuffer();
+
+        // Operations
+
+        void                    Reset(const void * pBytes, size_t nBytes);
+
+        // Properties
+
+        ID3D11Buffer *          Get() { return m_d3dIndexBuffer; }
+
+    private:
+        ID3D11Device *          m_d3dDevice;
+        ID3D11Buffer *          m_d3dIndexBuffer;
+
+        size_t                  m_capacity;
+        size_t                  m_size;
     };
 }

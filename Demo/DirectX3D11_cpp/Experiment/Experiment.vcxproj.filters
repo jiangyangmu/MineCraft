@@ -26,6 +26,9 @@
     <Filter Include="DX">
       <UniqueIdentifier>{8166fdb1-3892-4e2a-b6e7-cce435d4dcdc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{756f45aa-52dd-4e4f-b809-0656e44a2e00}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pch.h">
@@ -59,9 +62,6 @@
     <ClInclude Include="SkyboxRenderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
-    <ClInclude Include="DDSTextureLoader.h">
-      <Filter>Misc</Filter>
-    </ClInclude>
     <ClInclude Include="D3DRenderer.h">
       <Filter>Renderer</Filter>
     </ClInclude>
@@ -73,6 +73,12 @@
     </ClInclude>
     <ClInclude Include="RayRenderer.h">
       <Filter>Renderer</Filter>
+    </ClInclude>
+    <ClInclude Include="Sphere.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="DDSTextureLoader.h">
+      <Filter>ThirdParty</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -102,9 +108,6 @@
     <ClCompile Include="SkyboxRenderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
-    <ClCompile Include="DDSTextureLoader.cpp">
-      <Filter>Misc</Filter>
-    </ClCompile>
     <ClCompile Include="Camera.cpp">
       <Filter>Scene</Filter>
     </ClCompile>
@@ -114,12 +117,18 @@
     <ClCompile Include="RayRenderer.cpp">
       <Filter>Renderer</Filter>
     </ClCompile>
+    <ClCompile Include="DDSTextureLoader.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Image Include="directx.ico">
       <Filter>Misc</Filter>
     </Image>
     <Image Include="Skybox.dds">
+      <Filter>Misc</Filter>
+    </Image>
+    <Image Include="Grass.dds">
       <Filter>Misc</Filter>
     </Image>
   </ItemGroup>
@@ -150,6 +159,9 @@
       <Filter>Shader</Filter>
     </FxCompile>
     <FxCompile Include="CubeVS.hlsl">
+      <Filter>Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="CubePS.hlsl">
       <Filter>Shader</Filter>
     </FxCompile>
   </ItemGroup>

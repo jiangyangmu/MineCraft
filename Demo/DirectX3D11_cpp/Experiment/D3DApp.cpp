@@ -286,7 +286,7 @@ _RECV_EVENT_IMPL(D3DApplication, OnWndIdle)
         ENSURE_TRUE(
             QueryPerformanceCounter(&m_timerPreviousValue));
         
-        milliSeconds = 1.0;
+        milliSeconds = 33.0;
     }
 
     m_fps = 0.5 * m_fps + 0.5 * 1000.0 / milliSeconds;
@@ -295,7 +295,7 @@ _RECV_EVENT_IMPL(D3DApplication, OnWndIdle)
         ss.precision(2);
         ss << L"FPS: " << m_fps;
         SetWindowText(m_mainWnd.GetHWND(), ss.str().c_str());
-        Sleep(33);
+        Sleep(16);
     }
     
     UpdateScene(milliSeconds);
