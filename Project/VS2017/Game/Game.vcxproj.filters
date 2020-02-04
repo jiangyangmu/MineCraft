@@ -1,0 +1,171 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Win32">
+      <UniqueIdentifier>{7b8428bd-0f6a-4bb2-a2d6-cec9d46f85f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Common">
+      <UniqueIdentifier>{37757b03-5d5a-4af4-8fdd-3335daf49618}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Event">
+      <UniqueIdentifier>{e3514d3c-9805-4981-a7d4-e2a6933a5ace}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Scene">
+      <UniqueIdentifier>{09c2917c-e90c-4f4c-b86d-a24066e591e3}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render">
+      <UniqueIdentifier>{21eed569-6654-45e3-82ee-e2558c982d1b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Render\Shader">
+      <UniqueIdentifier>{ede99525-e9ad-46c8-8863-543e133043fc}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="DX">
+      <UniqueIdentifier>{03563707-ca8d-48c3-823a-2324b38cb2ea}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ThirdParty">
+      <UniqueIdentifier>{781fe8d4-4563-4cee-8c99-4cb6e2e71679}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Resources">
+      <UniqueIdentifier>{406a4bc9-8baa-4828-8c96-cd4a1187fde4}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="..\..\..\Resources\Grass.dds">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="..\..\..\Resources\Skybox.dds">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="..\..\..\Resources\Skybox_blue.dds">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="IconSmall.ico">
+      <Filter>Resources</Filter>
+    </Image>
+    <Image Include="Icon.ico">
+      <Filter>Resources</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\Source\D3DApp.cpp" />
+    <ClCompile Include="..\..\..\Source\Main.cpp" />
+    <ClCompile Include="..\..\..\Source\Camera.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\CameraRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\CubeRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\D3DBuffer.cpp">
+      <Filter>DX</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\DDSTextureLoader.cpp">
+      <Filter>ThirdParty</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\pch.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\RayRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\RendererUtil.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\SkyboxRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\TriangleRenderer.cpp">
+      <Filter>Render</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\ErrorHandling.cpp">
+      <Filter>Common</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\Source\Win32App.cpp">
+      <Filter>Win32</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\Source\D3DApp.h" />
+    <ClInclude Include="..\..\..\Source\Camera.h">
+      <Filter>Scene</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\CameraRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\CubeRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\D3DBuffer.h">
+      <Filter>DX</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\DDSTextureLoader.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\pch.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\D3DRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\RayRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\RendererUtil.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\SkyboxRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\TriangleRenderer.h">
+      <Filter>Render</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\ErrorHandling.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Event.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\EventDefinitions.h">
+      <Filter>Event</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Sphere.h">
+      <Filter>ThirdParty</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Win32App.h">
+      <Filter>Win32</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\StringTable.h">
+      <Filter>Common</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\..\..\Source\TODO.md" />
+  </ItemGroup>
+  <ItemGroup>
+    <FxCompile Include="..\..\..\Source\Shader\CubePS.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\Source\Shader\CubeVS.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\Source\Shader\PixelShader.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\Source\Shader\SkyboxPS.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\Source\Shader\SkyboxVS.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+    <FxCompile Include="..\..\..\Source\Shader\VertexShader.hlsl">
+      <Filter>Render\Shader</Filter>
+    </FxCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Icon.rc">
+      <Filter>Resources</Filter>
+    </ResourceCompile>
+  </ItemGroup>
+</Project>
