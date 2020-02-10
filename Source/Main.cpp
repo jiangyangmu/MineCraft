@@ -76,7 +76,7 @@ void BuildScene(Scene & scene, MyApplication & app)
             int z = static_cast<int>(pos.z - 5.0f);
 
             static double elapsed = 0.0;
-            while ((elapsed += milliSeconds) > 100.0)
+            if ((elapsed += milliSeconds) > 100.0)
             {
                 //std::wostringstream ss;
                 //ss << "Pos " << pos.x << " " << pos.y << " " << pos.z << std::endl;
