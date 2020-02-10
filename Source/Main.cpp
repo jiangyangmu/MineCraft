@@ -23,7 +23,8 @@ struct Scene
     render::CubeRenderer        cube;
     render::TriangleRenderer    tri;
 
-    scene::BlockWorld           block;
+    render::CubeRenderer        blockRenderers[16];
+    scene::BlockSystem          block;
 };
 
 class MyApplication : public render::D3DApplication
@@ -59,10 +60,12 @@ void BuildScene(Scene & scene, MyApplication & app)
     // app.RegisterRenderer(&scene.cube);
     // app.RegisterRenderer(&scene.tri);
 
-    for (auto renderer : scene.block.GetAllRenderers())
+    for (auto & renderer : scene.blockRenderers)
     {
-        app.RegisterRenderer(renderer);
+        app.RegisterRenderer(&renderer);
     }
+    scene.block.SetRendererPool(scene.blockRenderers,
+                                ARRAYSIZE(scene.blockRenderers));
 
     app.SetUpdateSceneCallback(
         [&](double milliSeconds)
@@ -81,7 +84,7 @@ void BuildScene(Scene & scene, MyApplication & app)
                 //OutputDebugString(ss.str().c_str());
 
                 // add a block below feet.
-                scene.block.Set(x, y, z, scene::Type::GRASS);
+                scene.block.Set(x, y, z, scene::GRASS_BLOCK);
                 
                 elapsed = 0.0;
             }
