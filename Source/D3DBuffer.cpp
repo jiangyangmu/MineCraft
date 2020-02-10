@@ -79,7 +79,12 @@ D3DDynamicVertexBuffer::~D3DDynamicVertexBuffer()
 void D3DDynamicVertexBuffer::Resize(size_t nBytes)
 {
     // round up to 1MB aligned
-    nBytes = (nBytes & 0xfffff) ? ((nBytes & ~0xfffff) + 0x100000) : (nBytes & ~0xfffff);
+    // nBytes = (nBytes & 0xfffff) ? ((nBytes & ~0xfffff) + 0x100000) : (nBytes & ~0xfffff);
+    
+    // round up to exp 2
+    size_t n = 4 * 1024; // start from 4KB
+    while (n < nBytes) n <<= 1;
+    nBytes = n;
 
     if (m_capacity < nBytes)
     {

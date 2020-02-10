@@ -10,8 +10,9 @@ namespace render
         BYTE *  pBytes;
     };
 
-    extern void     LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC);
-
     template <typename T>
     using Ptr = std::unique_ptr<T>;
+    
+    extern void     LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC);
+
 }

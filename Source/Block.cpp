@@ -35,12 +35,12 @@ struct Cube
 // 1. memory repr
 // 2. sync to GPU instance buffer
 template <int L>
-struct BlockCube
+struct BlockCubeT
 {
     std::array<BlockType, L * L * L> typeInfo;
     bool isDirty;
 
-    BlockCube() : isDirty(false) { typeInfo.fill(BlockType::EMPTY_BLOCK); }
+    BlockCubeT() : isDirty(false) { typeInfo.fill(BlockType::EMPTY_BLOCK); }
 
     BlockType Get(int lx, int ly, int lz) const
     {
@@ -67,7 +67,9 @@ struct BlockCube
         return L;
     }
 
-    bool Sync(int bx, int by, int bz, render::CubeRenderer * pRenderer)
+    bool Sync(int bx, int by, int bz,
+              render::PooledCubeRenderer * pRenderer,
+              int nIndex)
     {
         if (!isDirty)
             return false;
@@ -97,27 +99,32 @@ struct BlockCube
             ++pType;
         }
         win32::ENSURE_TRUE(buffer.data() + buffer.size() == pData);
-        pRenderer->Set(render::CubeRenderer::TEXTURE, buffer);
+        
+        pRenderer->SetInstanceBuffer(nIndex,
+                                     render::PooledCubeRenderer::TEXTURE,
+                                     std::move(buffer));
 
         return true;
     }
 };
-typedef BlockCube<16> BlockCube16;
+typedef BlockCubeT<64> BlockCube; // ~1MB
 
-struct Position16
+template <int TShift, int TAnd>
+struct PositionT
 {
     int bx, by, bz;
     int lx, ly, lz;
 
-    Position16(int x, int y, int z)
-        : bx(x >> 4)
-        , by(y >> 4)
-        , bz(z >> 4)
-        , lx(x & 0xf)
-        , ly(y & 0xf)
-        , lz(z & 0xf)
+    PositionT(int x, int y, int z)
+        : bx(x >> TShift)
+        , by(y >> TShift)
+        , bz(z >> TShift)
+        , lx(x & TAnd)
+        , ly(y & TAnd)
+        , lz(z & TAnd)
     {}
 };
+typedef PositionT<6, 63> Position;
 
 static inline
 int AbsDot(int x0, int y0, int z0, int x1, int y1, int z1)
@@ -131,31 +138,32 @@ int AbsDot(int x0, int y0, int z0, int x1, int y1, int z1)
 class BlockSystemImpl
 {
 public:
+    BlockSystemImpl() : m_nBlockCube(0) {}
 
     // Operations
 
     void        Set(int x, int y, int z, BlockType t)
     {
-        Position16 pos(x, y, z);
-
-        BlockCube16 & bc = GetBlockCube(pos);
+        Position        pos(x, y, z);
+        BlockCube &     bc = GetOrCreateBlockCube(pos);
 
         bc.Set(pos.lx, pos.ly, pos.lz, t);
     }
     void        Set(Int2 xx, Int2 yy, Int2 zz, BlockType t)
     {
-        Position16 a(xx._0, yy._0, zz._0);
-        Position16 b(xx._1, yy._1, zz._1);
+        Position a(xx._0, yy._0, zz._0);
+        Position b(xx._1, yy._1, zz._1);
 
         for (int bx = a.bx; bx <= b.bx; ++bx)
         for (int by = a.by; by <= b.by; ++by)
         for (int bz = a.bz; bz <= b.bz; ++bz)
         {
-            Position16 p(bx, by, bz);
-            BlockCube16 & bc = GetBlockCube(p);
+            Position        p(bx, by, bz);
+            BlockCube &     bc = GetOrCreateBlockCube(p);
 
-            Cube c = { xx, yy, zz };
-            Cube cb = { {bx, bx + bc.Length()}, {by, by + bc.Length()}, {bz, bz + bc.Length()} };
+            Cube            c = { xx, yy, zz };
+            Cube            cb = { {bx, bx + bc.Length()}, {by, by + bc.Length()}, {bz, bz + bc.Length()} };
+            
             c.ClampBy(cb);
 
             bc.Set(c.xx, c.yy, c.zz, t);
@@ -171,26 +179,27 @@ public:
     }
     BlockType   Query(int x, int y, int z) const
     {
-        Position16 pos(x, y, z);
-
-        const BlockCube16 & bc = GetBlockCube(pos);
+        Position                pos(x, y, z);
+        const BlockCube &       bc = GetBlockCube(pos);
 
         return bc.Get(pos.lx, pos.ly, pos.lz);
     }
     TypeCube    Query(Int2 xx, Int2 yy, Int2 zz) const
     {
-        TypeCube tc;
+        TypeCube    tc;
 
-        Cube c = { xx, yy, zz };
+        Cube        c = { xx, yy, zz };
+
         tc.reserve(c.Volumn());
         for (int x = xx._0; x <= xx._1; ++x)
         for (int y = yy._0; y <= yy._1; ++y)
         for (int z = zz._0; z <= zz._1; ++z)
         {
-            Position16 p(x, y, z);
-            const BlockCube16 & bc = GetBlockCube(p);
+            Position            p(x, y, z);
+            const BlockCube &   bc = GetBlockCube(p);
 
-            tc.push_back(bc.Get(p.lx, p.ly, p.lz));
+            tc.push_back(
+                bc.Get(p.lx, p.ly, p.lz));
         }
 
         return tc;
@@ -217,8 +226,9 @@ public:
             records.emplace_back(r);
         }
 
-        Position16 cpos(cx, cy, cz);
+        Position cpos(cx, cy, cz);
         Record c = { cpos.bx, cpos.by, cpos.bz, nullptr };
+
         std::sort(records.begin(),
                   records.end(),
                   [&c] (const Record & r0, const Record & r1) -> bool
@@ -232,8 +242,9 @@ public:
         int nUpdated = 0;
         for (Record & r : records)
         {
-            if (r.p->sceneInfo.Sync(r.bx, r.by, r.bz,
-                                    m_renderers.at(r.p->rendererIndex)))
+            if (r.p->sceneInfo->Sync(r.bx, r.by, r.bz,
+                                     m_renderer,
+                                     r.p->rendererIndex))
             {
                 //std::wostringstream ss;
                 //ss << L"Sync block " << r.bx << L" " << r.by << L" " << r.bz << std::endl;
@@ -246,16 +257,16 @@ public:
         }
     }
 
-    void        SetRendererPool(std::vector<render::CubeRenderer *> rendererPool)
+    void        BindRenderer(render::PooledCubeRenderer * pRenderer)
     {
-        m_renderers.swap(rendererPool);
+        m_renderer = pRenderer;
     }
 
 private:
 
     // Implementation
 
-    BlockCube16 &           GetBlockCube(const Position16 & pos)
+    BlockCube &             GetOrCreateBlockCube(const Position & pos)
     {
         static size_t nextIndex = 0;
 
@@ -263,30 +274,34 @@ private:
         auto xyz = xy.find(pos.bz);
         if (xyz != xy.end())
         {
-            return xyz->second.sceneInfo;
+            return *(xyz->second.sceneInfo);
         }
         else
         {
+            ++m_nBlockCube;
+
             Node u;
-            u.rendererIndex = (nextIndex++) % m_renderers.size();
-            return xy.emplace_hint(xyz, pos.bz, u)->second.sceneInfo;
+            u.sceneInfo.reset(new BlockCube);
+            // TODO: take renderer far from (cx, cy, cz)
+            u.rendererIndex = (nextIndex++) % m_renderer->GetPoolSize();
+            return *(xy.emplace_hint(xyz, pos.bz, std::move(u))->second.sceneInfo);
         }
     }
-    const BlockCube16 &     GetBlockCube(const Position16 & pos) const
+    const BlockCube &       GetBlockCube(const Position & pos) const
     {
-        return m_worldTree.at(pos.bx).at(pos.by).at(pos.bz).sceneInfo;
+        return *(m_worldTree.at(pos.bx).at(pos.by).at(pos.bz).sceneInfo);
     }
 
     struct Node
     {
-        BlockCube16     sceneInfo;
-        size_t          rendererIndex;
+        std::unique_ptr<BlockCube>  sceneInfo;
+        size_t                      rendererIndex;
     };
     typedef std::map<int, std::map<int, std::map<int, Node>>> NodeTree;
-    typedef std::vector<render::CubeRenderer *> RendererPool;
 
-    RendererPool    m_renderers;
-    NodeTree        m_worldTree;
+    render::PooledCubeRenderer *    m_renderer;
+    NodeTree                        m_worldTree;
+    size_t                          m_nBlockCube;
 };
 
 
@@ -316,14 +331,9 @@ BlockType BlockSystem::Query(int x, int y, int z) const
     return pImpl->Query(x, y, z);
 }
 
-void BlockSystem::SetRendererPool(render::CubeRenderer * pRenderers, size_t nCount)
+void BlockSystem::BindRenderer(render::PooledCubeRenderer * pRenderer)
 {
-    std::vector<render::CubeRenderer *> renderers(nCount);
-    for (size_t i = 0; i < nCount; ++i)
-    {
-        renderers[i] = pRenderers + i;
-    }
-    pImpl->SetRendererPool(renderers);
+    pImpl->BindRenderer(pRenderer);
 }
 
 void BlockSystem::Sync(int cx, int cy, int cz, int nMaxUpdate)

@@ -15,18 +15,6 @@
 using win32::ENSURE_TRUE;
 using render::D3DApplication;
 
-struct Scene
-{
-    render::CameraRenderer      camera;
-    render::RayRenderer         ray;
-    render::SkyboxRenderer      skybox;
-    render::CubeRenderer        cube;
-    render::TriangleRenderer    tri;
-
-    render::CubeRenderer        blockRenderers[16];
-    scene::BlockSystem          block;
-};
-
 class MyApplication : public render::D3DApplication
 {
 public:
@@ -52,6 +40,20 @@ private:
     std::function<void(double)> updateSceneCallback;
 };
 
+struct Scene
+{
+    render::CameraRenderer      camera;
+    render::RayRenderer         ray;
+    render::SkyboxRenderer      skybox;
+    render::CubeRenderer        cube;
+    render::TriangleRenderer    tri;
+
+    render::PooledCubeRenderer  pool = render::PooledCubeRenderer(256);
+    scene::BlockSystem          block;
+};
+
+Scene gGameScene;
+
 void BuildScene(Scene & scene, MyApplication & app)
 {
     app.RegisterRenderer(&scene.camera);
@@ -60,12 +62,15 @@ void BuildScene(Scene & scene, MyApplication & app)
     // app.RegisterRenderer(&scene.cube);
     // app.RegisterRenderer(&scene.tri);
 
-    for (auto & renderer : scene.blockRenderers)
+    app.RegisterRenderer(&scene.pool);
+    scene.block.BindRenderer(&scene.pool);
+    for (int i = 0; i < 256 * 1024; ++i)
     {
-        app.RegisterRenderer(&renderer);
+        int x = rand() % 512 - 256; // [-256, 255]
+        int y = rand() % 512 - 256; // [-256, 255]
+        int z = rand() % 256 - 128; // [-128, 127]
+        scene.block.Set(x, y, z, scene::GRASS_BLOCK);
     }
-    scene.block.SetRendererPool(scene.blockRenderers,
-                                ARRAYSIZE(scene.blockRenderers));
 
     app.SetUpdateSceneCallback(
         [&](double milliSeconds)
@@ -120,9 +125,8 @@ int WINAPI wWinMain(
     win32::InitializeCOM();
 
     MyApplication   app(L"DX Demo", hInstance);
-    Scene           scene;
 
-    BuildScene(scene, app);
+    BuildScene(gGameScene, app);
     app.Initialize();
     
     int             ret =

@@ -2,7 +2,7 @@
 
 namespace render
 {
-    class CubeRenderer;
+    class PooledCubeRenderer;
 }
 
 namespace scene
@@ -25,7 +25,7 @@ namespace scene
         void        Sync(int cx, int cy, int cz, int nMaxUpdate = 3);
         BlockType   Query(int x, int y, int z) const;
 
-        void        SetRendererPool(render::CubeRenderer * pRenderers, size_t nCount);
+        void        BindRenderer(render::PooledCubeRenderer * pRenderer);
 
     private:
 

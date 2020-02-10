@@ -258,11 +258,187 @@ void CubeRenderer::AddCube(float x, float y, float z, Type type)
     m_isDirty = true;
 }
 
-void CubeRenderer::Set(Type type, std::vector<DirectX::XMFLOAT4> buffer)
-{
-    m_cubes[type].swap(buffer);
 
-    m_isDirty = true;
+PooledCubeRenderer::PooledCubeRenderer(int nPoolSize)
+    : m_d3dContext(nullptr)
+    , m_pool(nPoolSize)
+{
+}
+
+void PooledCubeRenderer::Initialize(ID3D11Device * d3dDevice, float aspectRatio)
+{
+    UNREFERENCED_PARAMETER(aspectRatio);
+
+    m_d3dDevice         = d3dDevice;
+    d3dDevice->GetImmediateContext(&m_d3dContext);
+
+    // Vertex buffer
+
+    m_vertexBuffer.reset(new D3DConstantVertexBuffer(m_d3dDevice));
+    m_vertexBuffer->Reset(gCubeVertices,
+                          sizeof(float) * ARRAYSIZE(gCubeVertices));
+    
+    // Vertex shader
+
+    LoadCompiledShaderFromFile(STR_CUBEVS_VSO, &m_vertexShaderByteCode);
+
+    ENSURE_OK(
+        m_d3dDevice->CreateVertexShader(m_vertexShaderByteCode.pBytes,
+                                        m_vertexShaderByteCode.nSize,
+                                        nullptr,
+                                        &m_d3dVertexShader));
+
+    // Input layout
+
+    D3D11_INPUT_ELEMENT_DESC inputElementDescs[] =
+    {
+        { "POSITION",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0,  0, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+        { "TEXCOORD",    0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, 16, D3D11_INPUT_PER_VERTEX_DATA,   0 },
+        { "TRANSLATION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 1,  0, D3D11_INPUT_PER_INSTANCE_DATA, 1 },
+    };
+    ENSURE_OK(
+        m_d3dDevice->CreateInputLayout(inputElementDescs,
+                                       ARRAYSIZE(inputElementDescs),
+                                       m_vertexShaderByteCode.pBytes,
+                                       m_vertexShaderByteCode.nSize,
+                                       &m_d3dInputLayout));
+
+    // Pixel shader
+
+    LoadCompiledShaderFromFile(STR_CUBEPS_PSO, &m_pixelShaderByteCode);
+
+    ENSURE_OK(
+        m_d3dDevice->CreatePixelShader(m_pixelShaderByteCode.pBytes,
+                                       m_pixelShaderByteCode.nSize,
+                                       nullptr,
+                                       &m_d3dPixelShader));
+
+    THROW_IF_FAILED(
+        DirectX::CreateDDSTextureFromFile(m_d3dDevice,
+                                          STR_GRASS_DDS,
+                                          nullptr,
+                                          &m_d3dTextureSRV));
+
+    // Constant buffer
+    // set by CameraRenderer
+
+    // States
+
+    D3D11_RASTERIZER_DESC defaultRSDesc =
+        CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+    ENSURE_OK(
+        m_d3dDevice->CreateRasterizerState(&defaultRSDesc,
+                                           &m_defaultRS));
+    D3D11_RASTERIZER_DESC lineRSDesc =
+        CD3D11_RASTERIZER_DESC(CD3D11_DEFAULT());
+    lineRSDesc.FillMode = D3D11_FILL_WIREFRAME;
+    ENSURE_OK(
+        m_d3dDevice->CreateRasterizerState(&lineRSDesc,
+                                           &m_lineRS));
+
+    D3D11_SAMPLER_DESC defaultSSDesc =
+        CD3D11_SAMPLER_DESC(CD3D11_DEFAULT());
+    ENSURE_OK(
+        m_d3dDevice->CreateSamplerState(&defaultSSDesc,
+                                        &m_samplerState));
+
+    D3D11_DEPTH_STENCIL_DESC defaultDSDesc =
+        CD3D11_DEPTH_STENCIL_DESC(CD3D11_DEFAULT());
+    ENSURE_OK(
+        m_d3dDevice->CreateDepthStencilState(&defaultDSDesc,
+                                             &m_depthStencilState));
+
+}
+
+void PooledCubeRenderer::Update(double milliSeconds)
+{
+    UNREFERENCED_PARAMETER(milliSeconds);
+}
+
+void PooledCubeRenderer::Draw(ID3D11DeviceContext * d3dContext)
+{
+    m_d3dContext = d3dContext;
+
+    // Set IA stage
+
+    m_d3dContext->IASetPrimitiveTopology(
+        D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+    
+    m_d3dContext->IASetInputLayout(m_d3dInputLayout);
+
+    // Set VS stage
+
+    m_d3dContext->VSSetShader(m_d3dVertexShader,
+                              nullptr,
+                              0);
+
+    // Set PS stage
+
+    m_d3dContext->PSSetShader(m_d3dPixelShader,
+                              nullptr,
+                              0);
+    m_d3dContext->PSSetSamplers(0,
+                                1,
+                                &m_samplerState);
+    m_d3dContext->PSSetShaderResources(0,
+                                       1,
+                                       &m_d3dTextureSRV);
+
+    // Set RS stage
+
+    m_d3dContext->RSSetState(m_defaultRS);
+    
+    // Set OM stage
+
+    m_d3dContext->OMSetDepthStencilState(m_depthStencilState,
+                                         0);
+    // Draw
+
+    for (size_t i = 0; i < m_pool.size(); ++i)
+    {
+        if (!m_pool[i].instanceBuffer)
+            continue;
+
+        ID3D11Buffer *  buffers[] = { m_vertexBuffer->Get(), m_pool[i].instanceBuffer->Get() };
+        UINT            strides[] = { sizeof(float) * 4 * 2, sizeof(DirectX::XMFLOAT4) };
+        UINT            offsets[] = { 0, 0 };
+    
+        m_d3dContext->IASetVertexBuffers(0, // slot
+                                         2, // number of buffers
+                                         buffers,
+                                         strides,
+                                         offsets);
+    
+        // TEXTURE type
+
+        m_d3dContext->IASetPrimitiveTopology(
+            D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+        m_d3dContext->DrawInstanced(36,
+                                    m_pool[i].instanceCount,
+                                    0,
+                                    0);
+    }
+}
+
+void PooledCubeRenderer::SetInstanceBuffer(size_t nIndex, Type type, std::vector<DirectX::XMFLOAT4> data)
+{
+    ENSURE_TRUE(type == TEXTURE);
+    ENSURE_TRUE(nIndex < m_pool.size());
+
+    Ptr<D3DDynamicVertexBuffer> &    instanceBuffer = m_pool[nIndex].instanceBuffer;
+
+    if (!instanceBuffer)
+    {
+        instanceBuffer.reset(new D3DDynamicVertexBuffer(m_d3dDevice));
+    }
+
+    instanceBuffer->Resize(sizeof(data[0]) * data.size());
+    
+    ENSURE_NOT_NULL(m_d3dContext);
+    instanceBuffer->Mutate().Begin(m_d3dContext)
+        .Fill(data.data(), data.size());
+
+    m_pool[nIndex].instanceCount = data.size();
 }
 
 }
