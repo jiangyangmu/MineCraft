@@ -10,6 +10,7 @@
 #include "CubeRenderer.h"
 #include "SkyboxRenderer.h"
 #include "RayRenderer.h"
+#include "Block.h"
 
 using win32::ENSURE_TRUE;
 using render::D3DApplication;
@@ -21,24 +22,73 @@ struct Scene
     render::SkyboxRenderer      skybox;
     render::CubeRenderer        cube;
     render::TriangleRenderer    tri;
+
+    scene::BlockWorld           block;
 };
 
-void BuildScene(Scene & scene, render::D3DApplication & app)
+class MyApplication : public render::D3DApplication
 {
-    for (int x = -5; x <= 5; ++x)
+public:
+
+    using D3DApplication::D3DApplication;
+
+    void            SetUpdateSceneCallback(std::function<void(double)> cb)
     {
-        for (int y = -5; y <= 5; ++y)
-        {
-            scene.cube.AddCube((float)x * 2.0f, (float)y * 2.0f, 0.0f,
-                               render::CubeRenderer::TEXTURE);
-        }
+        updateSceneCallback = std::move(cb);
     }
 
+    virtual void    UpdateScene(double milliSeconds) override
+    {
+        if (updateSceneCallback)
+        {
+            updateSceneCallback(milliSeconds);
+        }
+        D3DApplication::UpdateScene(milliSeconds);
+    }
+
+private:
+
+    std::function<void(double)> updateSceneCallback;
+};
+
+void BuildScene(Scene & scene, MyApplication & app)
+{
     app.RegisterRenderer(&scene.camera);
     app.RegisterRenderer(&scene.ray);
-    app.RegisterRenderer(&scene.skybox);
-    app.RegisterRenderer(&scene.cube);
+    // app.RegisterRenderer(&scene.skybox);
+    // app.RegisterRenderer(&scene.cube);
     // app.RegisterRenderer(&scene.tri);
+
+    for (auto renderer : scene.block.GetAllRenderers())
+    {
+        app.RegisterRenderer(renderer);
+    }
+
+    app.SetUpdateSceneCallback(
+        [&](double milliSeconds)
+        {
+            DirectX::XMFLOAT3 pos = scene.camera.GetCamera().GetPos();
+            int x = static_cast<int>(pos.x);
+            int y = static_cast<int>(pos.y);
+            int z = static_cast<int>(pos.z - 5.0f);
+
+            static double elapsed = 0.0;
+            while ((elapsed += milliSeconds) > 100.0)
+            {
+                //std::wostringstream ss;
+                //ss << "Pos " << pos.x << " " << pos.y << " " << pos.z << std::endl;
+                //ss << "Pos " << x << " " << y << " " << z << std::endl;
+                //OutputDebugString(ss.str().c_str());
+
+                // add a block below feet.
+                scene.block.Set(x, y, z, scene::Type::GRASS);
+                
+                elapsed = 0.0;
+            }
+
+            scene.block.Sync(x, y, z);
+        }
+    );
 
     _BIND_EVENT(OnAspectRatioChange,    app,                scene.camera.GetCamera());
     _BIND_EVENT(OnMouseMove,            app.GetWindow(),    scene.camera.GetCamera().GetController());
@@ -66,7 +116,7 @@ int WINAPI wWinMain(
 
     win32::InitializeCOM();
 
-    D3DApplication  app(L"DX Demo", hInstance);
+    MyApplication   app(L"DX Demo", hInstance);
     Scene           scene;
 
     BuildScene(scene, app);

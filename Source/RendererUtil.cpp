@@ -13,8 +13,8 @@ void LoadCompiledShaderFromFile(const TCHAR * pFileName, ShaderByteCode * pSBC)
     FILE *  pFile;
     long    nSize;
     size_t  nReadSize;
-
-    ENSURE_CLIB_SUCCESS(    _wfopen_s(&pFile, pFileName, TEXT("rb"))    );
+    
+    ENSURE_CLIB_SUCCESS(    _wfopen_s(&pFile, pFileName, TEXT("rb")), pFileName );
     
     ENSURE_CLIB_SUCCESS(    fseek(pFile, 0, SEEK_END)                   );
     

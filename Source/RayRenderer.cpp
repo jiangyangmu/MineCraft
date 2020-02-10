@@ -93,23 +93,23 @@ void RayRenderer::Draw(ID3D11DeviceContext * d3dContext)
             0.0f, 0.0f, 100.0f, 1.0f,
             0.0f, 0.0f, 1.0f, 1.0f,
             // Eye dir
-            m_pos.x, m_pos.y, m_pos.z, 1.0f,
-            1.0f, 1.0f, 0.0f, 1.0f,
-            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
-            1.0f, 1.0f, 0.0f, 1.0f,
+            //m_pos.x, m_pos.y, m_pos.z, 1.0f,
+            //1.0f, 1.0f, 0.0f, 1.0f,
+            //m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            //1.0f, 1.0f, 0.0f, 1.0f,
             // Eye dir assist
-            10.0f, 0.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            0.0f, 10.0f, 0.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            0.0f, 0.0f, 10.0f, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
-            m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
-            1.0f, 1.0f, 1.0f, 1.0f,
+            //10.0f, 0.0f, 0.0f, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
+            //m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
+            //0.0f, 10.0f, 0.0f, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
+            //m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
+            //0.0f, 0.0f, 10.0f, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
+            //m_pos.x + m_dir.x * m_length, m_pos.y + m_dir.y * m_length, m_pos.z + m_dir.z * m_length, 1.0f,
+            //1.0f, 1.0f, 1.0f, 1.0f,
         };
 
         (*m_vertexBuffer)
@@ -148,7 +148,7 @@ void RayRenderer::Draw(ID3D11DeviceContext * d3dContext)
                               0);
 
     // Draw
-    m_d3dContext->Draw(28, 0);
+    m_d3dContext->Draw(28 - 16, 0);
 }
 
 }

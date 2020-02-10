@@ -285,16 +285,16 @@ _RECV_EVENT_IMPL(D3DApplication, OnWndIdle)
         ENSURE_TRUE(
             QueryPerformanceCounter(&m_timerPreviousValue));
         
-        milliSeconds = 33.0;
+        milliSeconds = 16.0;
     }
 
     m_fps = 0.5 * m_fps + 0.5 * 1000.0 / milliSeconds;
     {
         std::wstringstream ss;
         ss.precision(2);
-        ss << L"FPS: " << m_fps;
+        ss << L"FPS: " << m_fps << " ms: " << milliSeconds;
         SetWindowText(m_mainWnd.GetHWND(), ss.str().c_str());
-        Sleep(16);
+        Sleep(static_cast<DWORD>(std::max(0.0, 16.0 - milliSeconds)));
     }
     
     UpdateScene(milliSeconds);

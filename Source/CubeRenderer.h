@@ -24,6 +24,7 @@ namespace render
         virtual void    Draw(ID3D11DeviceContext * d3dContext) override;
 
         void            AddCube(float x, float y, float z, Type type = LINE);
+        void            Set(Type type, std::vector<DirectX::XMFLOAT4> buffer);
 
     private:
         ID3D11Device *                  m_d3dDevice;

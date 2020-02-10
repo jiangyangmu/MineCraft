@@ -34,7 +34,7 @@ namespace render
         float       m_vAngle = -30.0f;
 
         // move
-        const float m_speed = 30.0f;
+        const float m_speed = 10.0f;
         float       m_forwardFactor = 0.0f;
         float       m_rightFactor = 0.0f;
         float       m_upFactor = 0.0f;

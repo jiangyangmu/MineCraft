@@ -89,8 +89,8 @@ Window::Window(LPCWSTR lpTitle, HINSTANCE hInstance)
     m_hInstance         = hInstance;
     m_hWnd              = CreateDesktopWindow(m_hInstance,
                                               lpTitle,
-                                              800,
-                                              600,
+                                              2560,
+                                              1080,
                                               Window::WindowProc,
                                               this);
     ENSURE_NOT_NULL(m_hWnd);

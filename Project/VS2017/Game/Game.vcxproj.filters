@@ -85,6 +85,9 @@
     <ClCompile Include="..\..\..\Source\Win32App.cpp">
       <Filter>Win32</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\Source\Block.cpp">
+      <Filter>Scene</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\Source\D3DApp.h" />
@@ -138,6 +141,9 @@
     </ClInclude>
     <ClInclude Include="..\..\..\Source\StringTable.h">
       <Filter>Common</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\Source\Block.h">
+      <Filter>Scene</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

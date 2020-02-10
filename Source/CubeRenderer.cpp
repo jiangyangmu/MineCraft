@@ -258,4 +258,11 @@ void CubeRenderer::AddCube(float x, float y, float z, Type type)
     m_isDirty = true;
 }
 
+void CubeRenderer::Set(Type type, std::vector<DirectX::XMFLOAT4> buffer)
+{
+    m_cubes[type].swap(buffer);
+
+    m_isDirty = true;
+}
+
 }

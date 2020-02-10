@@ -73,6 +73,7 @@ static void PopupErrorMessage(LPTSTR lpMsgPrefix)
                MB_OK);
 }
 
+#ifdef _DEBUG
 static void GetStackTrace(LPTSTR lpBuffer, DWORD nSize, PCONTEXT ctx)
 {
     const int MaxNameLen = 256;
@@ -197,6 +198,12 @@ static void GetStackTrace(LPTSTR lpBuffer, DWORD nSize, PCONTEXT ctx)
         }
     }
 }
+#else
+static void GetStackTrace(LPTSTR lpBuffer, DWORD nSize, PCONTEXT ctx)
+{
+    return;
+}
+#endif
 
 static int  SEH_ExceptionFilter(DWORD dwExceptionCode,
                                 DWORD dwErrorCode,
@@ -320,18 +327,28 @@ namespace win32
         }
     }
 
-    extern void ENSURE_CLIB_SUCCESS(int iRet)
+    extern void ENSURE_CLIB_SUCCESS(int iRet, LPCTSTR msg)
     {
         if (iRet != 0)
         {
             StackTraceBreakpoint();
 
             TCHAR   message[256]    = TEXT("C Function Error: ");
-            int     prefix          = lstrlen(message);
+            int     offset          = lstrlen(message);
 
-            _wcserror_s(message + prefix,
-                        256 - prefix,
+            _wcserror_s(message + offset,
+                        256 - offset,
                         errno);
+
+            if (msg)
+            {
+                offset = lstrlen(message);
+            
+                _stprintf_s(message + offset,
+                            256 - offset,
+                            TEXT(": %s"),
+                            msg);
+            }
 
             __try
             {
